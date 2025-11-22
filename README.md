@@ -436,7 +436,7 @@
     <div class="dark-overlay"></div>
 
     <div class="header">
-        <div class="header-text">Diruni skanerlang</div>
+        <div class="header-text">Dorini Qr</div>
     </div>
 
     <button class="close-btn" onclick="closeScanner()">✕</button>
@@ -489,10 +489,11 @@
         let torchEnabled = false;
         let currentStream = null;
         let currentZoom = 1.0;
-        let maxZoom = 3.0;
+        let maxZoom = 5.0;
         let minZoom = 1.0;
         let zoomTimeout = null;
         let videoTrack = null;
+        let focusInterval = null;
 
         tg.expand();
         tg.ready();
@@ -500,12 +501,56 @@
         // Kamerani ochish
         async function startCamera() {
             try {
+                // Yuqori sifatli kamera sozlamalari
+                currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 3840 },  // 4K
+                        height: { ideal: 2160 },
+                        focusMode: "continuous",  // Doimiy fokus
+                        advanced: [
+                            { focusMode: "continuous" },
+                            { exposureMode: "continuous" },
+                            { whiteBalanceMode: "continuous" }
+                        ]
+                    }
+                });
+
+                videoTrack = currentStream.getVideoTracks()[0];
+                
+                // Kamera imkoniyatlarini olish
+                const capabilities = videoTrack.getCapabilities();
+                console.log("Kamera capabilities:", capabilities);
+                
+                // Zoom sozlash
+                if (capabilities.zoom) {
+                    maxZoom = capabilities.zoom.max || 5.0;
+                    minZoom = capabilities.zoom.min || 1.0;
+                    currentZoom = minZoom;
+                }
+
+                // Fokus sozlash
+                if (capabilities.focusMode) {
+                    await videoTrack.applyConstraints({
+                        advanced: [{
+                            focusMode: "continuous",
+                            exposureMode: "continuous",
+                            whiteBalanceMode: "continuous"
+                        }]
+                    });
+                }
+
+                // HTML5 QRCode bilan ulash
                 html5Qrcode = new Html5Qrcode("reader");
                 
                 const config = {
-                    fps: 10,
-                    qrbox: 250,
-                    aspectRatio: 1.0
+                    fps: 30,  // FPS oshirildi
+                    qrbox: 280,
+                    aspectRatio: 1.0,
+                    disableFlip: false,
+                    videoConstraints: {
+                        focusMode: "continuous"
+                    }
                 };
 
                 await html5Qrcode.start(
@@ -515,14 +560,11 @@
                 );
 
                 setTimeout(() => {
-                    const videoElement = document.querySelector('#reader video');
-                    if (videoElement && videoElement.srcObject) {
-                        currentStream = videoElement.srcObject;
-                        videoTrack = currentStream.getVideoTracks()[0];
-                        setupZoom();
-                    }
+                    setupZoom();
+                    setupAutoFocus();
+                    updateZoomUI();
                     document.getElementById('loading').style.display = 'none';
-                }, 1000);
+                }, 1500);
 
             } catch (err) {
                 console.error("Kamera xatosi:", err);
@@ -532,52 +574,34 @@
 
         // Zoom sozlash
         function setupZoom() {
-            if (!videoTrack) return;
-
-            const capabilities = videoTrack.getCapabilities();
+            console.log("Setup zoom boshlandi");
             
-            if (capabilities.zoom) {
-                maxZoom = capabilities.zoom.max || 3.0;
-                minZoom = capabilities.zoom.min || 1.0;
-                currentZoom = minZoom;
+            if (videoTrack) {
+                const capabilities = videoTrack.getCapabilities();
+                console.log("Kamera capabilities:", capabilities);
+                
+                if (capabilities.zoom) {
+                    maxZoom = capabilities.zoom.max || 5.0;
+                    minZoom = capabilities.zoom.min || 1.0;
+                    currentZoom = minZoom;
+                    console.log("Zoom qo'llab-quvvatlanadi:", minZoom, "-", maxZoom);
+                } else {
+                    console.log("Zoom qo'llab-quvvatlanmaydi, CSS ishlatamiz");
+                    maxZoom = 5.0;
+                    minZoom = 1.0;
+                }
+            } else {
+                console.log("Video track topilmadi");
+                maxZoom = 5.0;
+                minZoom = 1.0;
             }
 
-            // Dastlabki UI ni ko'rsatish
             updateZoomUI();
-
-            const scanArea = document.querySelector('.scan-frame');
-            if (!scanArea) return;
 
             let touchStartY = 0;
             let startZoom = currentZoom;
             let isZooming = false;
 
-            // Scan area ga touch events
-            scanArea.addEventListener('touchstart', (e) => {
-                touchStartY = e.touches[0].clientY;
-                startZoom = currentZoom;
-                isZooming = true;
-                e.preventDefault();
-            });
-
-            scanArea.addEventListener('touchmove', (e) => {
-                if (!isZooming) return;
-                
-                const touchY = e.touches[0].clientY;
-                const deltaY = touchStartY - touchY;
-                const zoomChange = deltaY / 100; // Sezgirlikni oshirdik
-                
-                currentZoom = Math.max(minZoom, Math.min(maxZoom, startZoom + zoomChange));
-                applyZoom();
-                updateZoomUI();
-                e.preventDefault();
-            });
-
-            scanArea.addEventListener('touchend', () => {
-                isZooming = false;
-            });
-
-            // Body ga ham qo'shamiz
             document.body.addEventListener('touchstart', (e) => {
                 if (e.target.closest('.result-modal') || e.target.closest('.torch-btn') || e.target.closest('.close-btn')) {
                     return;
@@ -610,14 +634,92 @@
 
         // Zoom qo'llash
         async function applyZoom() {
-            if (!videoTrack) return;
+            if (!videoTrack) {
+                console.log("Video track yo'q");
+                return;
+            }
             
             try {
-                await videoTrack.applyConstraints({
-                    advanced: [{ zoom: currentZoom }]
-                });
+                const constraints = {
+                    advanced: [
+                        { 
+                            zoom: currentZoom,
+                            focusMode: "continuous",
+                            exposureMode: "continuous"
+                        }
+                    ]
+                };
+                
+                await videoTrack.applyConstraints(constraints);
+                console.log("Zoom qo'llandi:", currentZoom);
+                
+                // Zoom o'zgarganda fokusni qayta sozlash
+                await adjustFocus();
+                
             } catch (err) {
                 console.error("Zoom xatosi:", err);
+                
+                // Agar zoom qo'llab-quvvatlanmasa, CSS transform ishlatamiz
+                const videoElement = document.querySelector('#reader video');
+                if (videoElement) {
+                    const scale = currentZoom;
+                    videoElement.style.transform = `scale(${scale})`;
+                    videoElement.style.transformOrigin = 'center center';
+                }
+            }
+        }
+
+        // Avtomatik fokus sozlash
+        function setupAutoFocus() {
+            if (!videoTrack) return;
+
+            const capabilities = videoTrack.getCapabilities();
+            console.log("Fokus capabilities:", capabilities.focusMode);
+
+            // Har 100ms da fokusni tekshirish
+            setInterval(async () => {
+                try {
+                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                        await videoTrack.applyConstraints({
+                            advanced: [{
+                                focusMode: "continuous"
+                            }]
+                        });
+                    }
+                } catch (err) {
+                    // Ignore
+                }
+            }, 100);
+        }
+
+        // Fokusni sozlash
+        async function adjustFocus() {
+            if (!videoTrack) return;
+
+            try {
+                const capabilities = videoTrack.getCapabilities();
+                
+                if (capabilities.focusMode) {
+                    await videoTrack.applyConstraints({
+                        advanced: [{
+                            focusMode: "continuous"
+                        }]
+                    });
+                }
+
+                // Agar focusDistance mavjud bo'lsa
+                if (capabilities.focusDistance) {
+                    const focusDistance = capabilities.focusDistance.min + 
+                        (capabilities.focusDistance.max - capabilities.focusDistance.min) / currentZoom;
+                    
+                    await videoTrack.applyConstraints({
+                        advanced: [{
+                            focusDistance: focusDistance
+                        }]
+                    });
+                }
+            } catch (err) {
+                console.log("Fokus sozlash xatosi:", err);
             }
         }
 
