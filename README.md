@@ -112,7 +112,8 @@
             width: 280px;
             height: 280px;
             z-index: 20;
-            pointer-events: none;
+            pointer-events: auto;
+            touch-action: none;
         }
 
         /* Burchaklar */
@@ -229,18 +230,11 @@
             bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
-            display: none;
+            display: flex;
             flex-direction: column;
             align-items: center;
             z-index: 25;
             gap: 10px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .zoom-container.show {
-            display: flex;
-            opacity: 1;
         }
 
         .zoom-text {
@@ -548,39 +542,70 @@
                 currentZoom = minZoom;
             }
 
-            const videoElement = document.querySelector('#reader video');
-            if (!videoElement) return;
+            // Dastlabki UI ni ko'rsatish
+            updateZoomUI();
+
+            const scanArea = document.querySelector('.scan-frame');
+            if (!scanArea) return;
 
             let touchStartY = 0;
             let startZoom = currentZoom;
             let isZooming = false;
 
-            videoElement.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 1) {
-                    touchStartY = e.touches[0].clientY;
-                    startZoom = currentZoom;
-                    isZooming = true;
-                    showZoomIndicator();
-                }
-            }, { passive: true });
+            // Scan area ga touch events
+            scanArea.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                startZoom = currentZoom;
+                isZooming = true;
+                e.preventDefault();
+            });
 
-            videoElement.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1 && isZooming) {
-                    const touchY = e.touches[0].clientY;
-                    const deltaY = touchStartY - touchY;
-                    const zoomChange = deltaY / 150;
-                    
-                    currentZoom = Math.max(minZoom, Math.min(maxZoom, startZoom + zoomChange));
-                    applyZoom();
-                    updateZoomUI();
-                    showZoomIndicator();
-                }
-            }, { passive: true });
+            scanArea.addEventListener('touchmove', (e) => {
+                if (!isZooming) return;
+                
+                const touchY = e.touches[0].clientY;
+                const deltaY = touchStartY - touchY;
+                const zoomChange = deltaY / 100; // Sezgirlikni oshirdik
+                
+                currentZoom = Math.max(minZoom, Math.min(maxZoom, startZoom + zoomChange));
+                applyZoom();
+                updateZoomUI();
+                e.preventDefault();
+            });
 
-            videoElement.addEventListener('touchend', () => {
+            scanArea.addEventListener('touchend', () => {
                 isZooming = false;
-                hideZoomIndicator();
-            }, { passive: true });
+            });
+
+            // Body ga ham qo'shamiz
+            document.body.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.result-modal') || e.target.closest('.torch-btn') || e.target.closest('.close-btn')) {
+                    return;
+                }
+                touchStartY = e.touches[0].clientY;
+                startZoom = currentZoom;
+                isZooming = true;
+            }, { passive: false });
+
+            document.body.addEventListener('touchmove', (e) => {
+                if (!isZooming) return;
+                if (e.target.closest('.result-modal') || e.target.closest('.torch-btn') || e.target.closest('.close-btn')) {
+                    return;
+                }
+                
+                const touchY = e.touches[0].clientY;
+                const deltaY = touchStartY - touchY;
+                const zoomChange = deltaY / 100;
+                
+                currentZoom = Math.max(minZoom, Math.min(maxZoom, startZoom + zoomChange));
+                applyZoom();
+                updateZoomUI();
+                e.preventDefault();
+            }, { passive: false });
+
+            document.body.addEventListener('touchend', () => {
+                isZooming = false;
+            });
         }
 
         // Zoom qo'llash
@@ -602,18 +627,6 @@
             document.getElementById('zoomProgress').style.width = percent + '%';
             document.getElementById('zoomIndicator').style.left = percent + '%';
             document.getElementById('zoomText').textContent = currentZoom.toFixed(1) + 'x';
-        }
-
-        function showZoomIndicator() {
-            clearTimeout(zoomTimeout);
-            const container = document.getElementById('zoomContainer');
-            container.classList.add('show');
-        }
-
-        function hideZoomIndicator() {
-            zoomTimeout = setTimeout(() => {
-                document.getElementById('zoomContainer').classList.remove('show');
-            }, 1500);
         }
 
         // Scan success
