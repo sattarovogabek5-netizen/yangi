@@ -43,6 +43,7 @@
             width: 100vw !important;
             height: 100vh !important;
             object-fit: cover !important;
+            transition: transform 0.1s ease-out;
         }
 
         /* Qorong'u overlay */
@@ -163,7 +164,7 @@
             right: 10px;
             height: 2px;
             background: linear-gradient(90deg, transparent, #4ade80, transparent);
-            animation: scan 2.5s ease-in-out infinite;
+            animation: scan 1.5s ease-in-out infinite;
             box-shadow: 0 0 10px #4ade80;
         }
 
@@ -224,8 +225,8 @@
             box-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
         }
 
-        /* Zoom indicator */
-        .zoom-container {
+        /* Zoom controls */
+        .zoom-controls {
             position: fixed;
             bottom: 120px;
             left: 50%;
@@ -248,61 +249,31 @@
             border: 1px solid rgba(74, 222, 128, 0.3);
         }
 
-        .zoom-bar {
-            position: relative;
-            width: 200px;
-            height: 24px;
+        .zoom-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .zoom-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(60, 60, 60, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
             display: flex;
             align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
         }
 
-        .zoom-track {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            position: relative;
-            overflow: visible;
-        }
-
-        .zoom-track::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 0;
-            right: 0;
-            height: 24px;
-            background: repeating-linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.5) 0px,
-                rgba(255, 255, 255, 0.5) 2px,
-                transparent 2px,
-                transparent 6px
-            );
-        }
-
-        .zoom-progress {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: #4ade80;
-            border-radius: 2px;
-            width: 0%;
-            transition: width 0.1s ease;
-        }
-
-        .zoom-indicator {
-            position: absolute;
-            left: 0%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 4px;
-            height: 24px;
-            background: #4ade80;
-            border-radius: 2px;
-            box-shadow: 0 0 12px #4ade80;
-            transition: left 0.1s ease;
+        .zoom-btn:active {
+            transform: scale(0.9);
+            background: rgba(80, 80, 80, 0.9);
         }
 
         /* Result modal */
@@ -436,7 +407,7 @@
     <div class="dark-overlay"></div>
 
     <div class="header">
-        <div class="header-text">Dorini Qr</div>
+        <div class="header-text">Diruni skanerlang</div>
     </div>
 
     <button class="close-btn" onclick="closeScanner()">✕</button>
@@ -455,13 +426,11 @@
 
     <button class="torch-btn" id="torchBtn" onclick="toggleTorch()">🔦</button>
 
-    <div class="zoom-container" id="zoomContainer">
+    <div class="zoom-controls" id="zoomControls">
         <div class="zoom-text" id="zoomText">1.0x</div>
-        <div class="zoom-bar">
-            <div class="zoom-track">
-                <div class="zoom-progress" id="zoomProgress"></div>
-                <div class="zoom-indicator" id="zoomIndicator"></div>
-            </div>
+        <div class="zoom-buttons">
+            <button class="zoom-btn" onclick="zoomOut()">-</button>
+            <button class="zoom-btn" onclick="zoomIn()">+</button>
         </div>
     </div>
 
@@ -491,9 +460,8 @@
         let currentZoom = 1.0;
         let maxZoom = 5.0;
         let minZoom = 1.0;
-        let zoomTimeout = null;
         let videoTrack = null;
-        let focusInterval = null;
+        let isScanning = false;
 
         tg.expand();
         tg.ready();
@@ -501,252 +469,185 @@
         // Kamerani ochish
         async function startCamera() {
             try {
-                // Yuqori sifatli kamera sozlamalari
+                // Optimallashtirilgan kamera sozlamalari
                 currentStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "environment",
-                        width: { ideal: 3840 },  // 4K
-                        height: { ideal: 2160 },
-                        focusMode: "continuous",  // Doimiy fokus
-                        advanced: [
-                            { focusMode: "continuous" },
-                            { exposureMode: "continuous" },
-                            { whiteBalanceMode: "continuous" }
-                        ]
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        frameRate: { ideal: 60 }, // Yuqori FPS
+                        focusMode: "continuous"
                     }
                 });
 
                 videoTrack = currentStream.getVideoTracks()[0];
                 
-                // Kamera imkoniyatlarini olish
+                // Kamera imkoniyatlarini tekshirish
                 const capabilities = videoTrack.getCapabilities();
                 console.log("Kamera capabilities:", capabilities);
                 
                 // Zoom sozlash
                 if (capabilities.zoom) {
-                    maxZoom = capabilities.zoom.max || 5.0;
+                    maxZoom = Math.min(capabilities.zoom.max, 10.0);
                     minZoom = capabilities.zoom.min || 1.0;
                     currentZoom = minZoom;
-                }
-
-                // Fokus sozlash
-                if (capabilities.focusMode) {
-                    await videoTrack.applyConstraints({
-                        advanced: [{
-                            focusMode: "continuous",
-                            exposureMode: "continuous",
-                            whiteBalanceMode: "continuous"
-                        }]
-                    });
+                    console.log("Zoom sozlandi:", minZoom, "-", maxZoom);
                 }
 
                 // HTML5 QRCode bilan ulash
                 html5Qrcode = new Html5Qrcode("reader");
                 
                 const config = {
-                    fps: 30,  // FPS oshirildi
-                    qrbox: 280,
+                    fps: 60, // Maksimal FPS
+                    qrbox: {
+                        width: 280,
+                        height: 280
+                    },
                     aspectRatio: 1.0,
                     disableFlip: false,
-                    videoConstraints: {
-                        focusMode: "continuous"
-                    }
+                    supportedScanTypes: [
+                        Html5QrcodeScanType.SCAN_TYPE_CAMERA
+                    ]
                 };
 
                 await html5Qrcode.start(
-                    { facingMode: "environment" },
+                    { 
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        frameRate: { ideal: 60 }
+                    },
                     config,
-                    (decodedText) => onScanSuccess(decodedText)
-                );
+                    onScanSuccess,
+                    onScanFailure
+                ).catch(err => {
+                    console.log("HTML5Qrcode start error:", err);
+                    // Qayta urinish - soddaroq sozlamalar bilan
+                    return html5Qrcode.start(
+                        { facingMode: "environment" },
+                        { 
+                            fps: 30,
+                            qrbox: 280 
+                        },
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                });
 
+                // Zoom va UI ni sozlash
+                applyZoom();
+                updateZoomUI();
+                
                 setTimeout(() => {
-                    setupZoom();
-                    setupAutoFocus();
-                    updateZoomUI();
                     document.getElementById('loading').style.display = 'none';
-                }, 1500);
+                    isScanning = true;
+                }, 1000);
 
             } catch (err) {
                 console.error("Kamera xatosi:", err);
-                document.getElementById('loading').innerHTML = '<div style="color: #ff4444;">Kamera ochilmadi</div>';
+                document.getElementById('loading').innerHTML = 
+                    '<div style="color: #ff4444; text-align: center;">' +
+                    '<div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>' +
+                    'Kamera ochilmadi<br>' +
+                    '<button onclick="startCamera()" style="margin-top: 15px; padding: 10px 20px; background: #4ade80; border: none; border-radius: 10px; color: black; font-weight: bold;">Qayta urinish</button>' +
+                    '</div>';
             }
         }
 
-        // Zoom sozlash
-        function setupZoom() {
-            console.log("Setup zoom boshlandi");
-            
-            if (videoTrack) {
-                const capabilities = videoTrack.getCapabilities();
-                console.log("Kamera capabilities:", capabilities);
-                
-                if (capabilities.zoom) {
-                    maxZoom = capabilities.zoom.max || 5.0;
-                    minZoom = capabilities.zoom.min || 1.0;
-                    currentZoom = minZoom;
-                    console.log("Zoom qo'llab-quvvatlanadi:", minZoom, "-", maxZoom);
-                } else {
-                    console.log("Zoom qo'llab-quvvatlanmaydi, CSS ishlatamiz");
-                    maxZoom = 5.0;
-                    minZoom = 1.0;
-                }
-            } else {
-                console.log("Video track topilmadi");
-                maxZoom = 5.0;
-                minZoom = 1.0;
-            }
-
-            updateZoomUI();
-
-            let touchStartY = 0;
-            let startZoom = currentZoom;
-            let isZooming = false;
-
-            document.body.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.result-modal') || e.target.closest('.torch-btn') || e.target.closest('.close-btn')) {
-                    return;
-                }
-                touchStartY = e.touches[0].clientY;
-                startZoom = currentZoom;
-                isZooming = true;
-            }, { passive: false });
-
-            document.body.addEventListener('touchmove', (e) => {
-                if (!isZooming) return;
-                if (e.target.closest('.result-modal') || e.target.closest('.torch-btn') || e.target.closest('.close-btn')) {
-                    return;
-                }
-                
-                const touchY = e.touches[0].clientY;
-                const deltaY = touchStartY - touchY;
-                const zoomChange = deltaY / 100;
-                
-                currentZoom = Math.max(minZoom, Math.min(maxZoom, startZoom + zoomChange));
+        // Zoom in
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(maxZoom, currentZoom + 0.5);
                 applyZoom();
                 updateZoomUI();
-                e.preventDefault();
-            }, { passive: false });
+                
+                if (tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+            }
+        }
 
-            document.body.addEventListener('touchend', () => {
-                isZooming = false;
-            });
+        // Zoom out
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(minZoom, currentZoom - 0.5);
+                applyZoom();
+                updateZoomUI();
+                
+                if (tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+            }
         }
 
         // Zoom qo'llash
         async function applyZoom() {
-            if (!videoTrack) {
-                console.log("Video track yo'q");
-                return;
-            }
+            if (!videoTrack) return;
             
             try {
-                const constraints = {
-                    advanced: [
-                        { 
-                            zoom: currentZoom,
-                            focusMode: "continuous",
-                            exposureMode: "continuous"
-                        }
-                    ]
-                };
+                const capabilities = videoTrack.getCapabilities();
                 
-                await videoTrack.applyConstraints(constraints);
+                if (capabilities.zoom) {
+                    // Hardware zoom
+                    await videoTrack.applyConstraints({
+                        advanced: [{ zoom: currentZoom }]
+                    });
+                } else {
+                    // CSS zoom fallback
+                    const videoElement = document.querySelector('#reader video');
+                    if (videoElement) {
+                        videoElement.style.transform = `scale(${currentZoom})`;
+                        videoElement.style.transformOrigin = 'center center';
+                    }
+                }
                 console.log("Zoom qo'llandi:", currentZoom);
-                
-                // Zoom o'zgarganda fokusni qayta sozlash
-                await adjustFocus();
                 
             } catch (err) {
                 console.error("Zoom xatosi:", err);
-                
-                // Agar zoom qo'llab-quvvatlanmasa, CSS transform ishlatamiz
+                // CSS zoom fallback
                 const videoElement = document.querySelector('#reader video');
                 if (videoElement) {
-                    const scale = currentZoom;
-                    videoElement.style.transform = `scale(${scale})`;
+                    videoElement.style.transform = `scale(${currentZoom})`;
                     videoElement.style.transformOrigin = 'center center';
                 }
             }
         }
 
-        // Avtomatik fokus sozlash
-        function setupAutoFocus() {
-            if (!videoTrack) return;
-
-            const capabilities = videoTrack.getCapabilities();
-            console.log("Fokus capabilities:", capabilities.focusMode);
-
-            // Har 100ms da fokusni tekshirish
-            setInterval(async () => {
-                try {
-                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                        await videoTrack.applyConstraints({
-                            advanced: [{
-                                focusMode: "continuous"
-                            }]
-                        });
-                    }
-                } catch (err) {
-                    // Ignore
-                }
-            }, 100);
-        }
-
-        // Fokusni sozlash
-        async function adjustFocus() {
-            if (!videoTrack) return;
-
-            try {
-                const capabilities = videoTrack.getCapabilities();
-                
-                if (capabilities.focusMode) {
-                    await videoTrack.applyConstraints({
-                        advanced: [{
-                            focusMode: "continuous"
-                        }]
-                    });
-                }
-
-                // Agar focusDistance mavjud bo'lsa
-                if (capabilities.focusDistance) {
-                    const focusDistance = capabilities.focusDistance.min + 
-                        (capabilities.focusDistance.max - capabilities.focusDistance.min) / currentZoom;
-                    
-                    await videoTrack.applyConstraints({
-                        advanced: [{
-                            focusDistance: focusDistance
-                        }]
-                    });
-                }
-            } catch (err) {
-                console.log("Fokus sozlash xatosi:", err);
-            }
-        }
-
-        // Zoom UI
+        // Zoom UI yangilash
         function updateZoomUI() {
-            const percent = ((currentZoom - minZoom) / (maxZoom - minZoom)) * 100;
-            document.getElementById('zoomProgress').style.width = percent + '%';
-            document.getElementById('zoomIndicator').style.left = percent + '%';
             document.getElementById('zoomText').textContent = currentZoom.toFixed(1) + 'x';
         }
 
-        // Scan success
+        // Scan success - tezroq ishlashi uchun
         function onScanSuccess(decodedText) {
-            if (scannedData) return;
+            if (scannedData || !isScanning) return;
             
             scannedData = decodedText;
+            isScanning = false;
+            
+            console.log("QR kod topildi:", decodedText);
             
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.notificationOccurred('success');
             }
 
+            // Tezkor modal ko'rsatish
             document.getElementById('resultContent').textContent = decodedText;
             document.getElementById('resultModal').classList.add('show');
             
-            if (html5Qrcode) {
-                html5Qrcode.stop().catch(err => console.log(err));
+            // Kamerani to'xtatish
+            if (html5Qrcode && html5Qrcode.isScanning) {
+                html5Qrcode.stop().catch(err => console.log("Stop error:", err));
             }
+        }
+
+        // Scan failure - optimallashtirilgan
+        function onScanFailure(error) {
+            // Faqat og'hat xatolarni ko'rsatish
+            if (!error || error === "NotFoundException" || error.includes("No QR")) {
+                return; // Normal holat, QR topilmadi
+            }
+            console.log("Scan error (expected):", error);
         }
 
         // Chiroq
@@ -757,7 +658,13 @@
                 const capabilities = videoTrack.getCapabilities();
                 
                 if (!capabilities.torch) {
-                    alert("Chiroq qo'llab-quvvatlanmaydi");
+                    if (tg.showPopup) {
+                        tg.showPopup({
+                            title: "Diqqat",
+                            message: "Ushbu qurilmada chiroq qo'llab-quvvatlanmaydi",
+                            buttons: [{ type: "ok" }]
+                        });
+                    }
                     return;
                 }
 
@@ -792,24 +699,81 @@
         }
 
         // Qayta skanerlash
-        function scanAgain() {
+        async function scanAgain() {
             scannedData = null;
             document.getElementById('resultModal').classList.remove('show');
             document.getElementById('loading').style.display = 'block';
-            setTimeout(startCamera, 300);
+            
+            // Qisqa kutish va qayta boshlash
+            setTimeout(async () => {
+                try {
+                    if (html5Qrcode) {
+                        await html5Qrcode.stop();
+                    }
+                    await startCamera();
+                } catch (err) {
+                    console.log("Restart error:", err);
+                    startCamera();
+                }
+            }, 300);
         }
 
         // Yopish
         function closeScanner() {
-            if (html5Qrcode) {
+            isScanning = false;
+            if (html5Qrcode && html5Qrcode.isScanning) {
                 html5Qrcode.stop().catch(err => console.log(err));
+            }
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
             }
             tg.close();
         }
 
+        // Touch zoom uchun
+        let initialDistance = null;
+
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialDistance) {
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                
+                const zoomFactor = currentDistance / initialDistance;
+                const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom * zoomFactor));
+                
+                if (Math.abs(newZoom - currentZoom) > 0.1) {
+                    currentZoom = newZoom;
+                    applyZoom();
+                    updateZoomUI();
+                }
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            initialDistance = null;
+        });
+
         // Boshlash
         window.addEventListener('load', () => {
             setTimeout(startCamera, 500);
+        });
+
+        // Oldindan yuklash uchun
+        window.addEventListener('beforeunload', () => {
+            if (html5Qrcode && html5Qrcode.isScanning) {
+                html5Qrcode.stop();
+            }
         });
     </script>
 </body>
