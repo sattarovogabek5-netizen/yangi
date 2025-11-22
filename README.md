@@ -372,43 +372,36 @@
         // Kamerani ochish
         async function startCamera() {
             try {
-                const config = {
-                    fps: 30,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0,
-                    videoConstraints: {
-                        facingMode: { exact: "environment" },
-                        focusMode: "continuous",
-                        advanced: [
-                            { zoom: 2.0 }
-                        ]
-                    }
-                };
-
                 html5Qrcode = new Html5Qrcode("reader");
                 
+                const qrCodeSuccessCallback = (decodedText) => {
+                    onScanSuccess(decodedText);
+                };
+                
+                const config = {
+                    fps: 10,
+                    qrbox: 250,
+                    aspectRatio: 1.0
+                };
+
                 await html5Qrcode.start(
                     { facingMode: "environment" },
-                    {
-                        fps: 30,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0,
-                        focusMode: "continuous"
-                    },
-                    onScanSuccess,
-                    onScanError
+                    config,
+                    qrCodeSuccessCallback
                 );
 
                 // Stream olish
-                const videoElement = document.querySelector('#reader video');
-                if (videoElement && videoElement.srcObject) {
-                    currentStream = videoElement.srcObject;
-                }
+                setTimeout(() => {
+                    const videoElement = document.querySelector('#reader video');
+                    if (videoElement && videoElement.srcObject) {
+                        currentStream = videoElement.srcObject;
+                    }
+                    document.getElementById('loading').style.display = 'none';
+                }, 1000);
 
-                document.getElementById('loading').style.display = 'none';
             } catch (err) {
                 console.error("Kamera xatosi:", err);
-                alert("Kamerani ochishda xatolik yuz berdi");
+                document.getElementById('loading').innerHTML = '<div style="color: #ff4444;">Kamera ochilmadi. Ruxsat bering.</div>';
             }
         }
 
