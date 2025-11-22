@@ -2,7 +2,7 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QR Kod Skaneri</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -14,69 +14,108 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #000;
-            width: 100vw;
-            height: 100vh;
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             position: fixed;
+            background: #000;
         }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Video container */
         #reader {
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-
-        #reader video {
-            width: 100vw !important;
-            height: 100vh !important;
-            object-fit: cover !important;
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1 !important;
+        }
+
+        #reader video {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
         }
 
         /* Qorong'u overlay */
-        .overlay {
+        .dark-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        /* Skaner ramkasi */
-        .scan-area {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 260px;
-            height: 260px;
-            z-index: 15;
-            pointer-events: none;
-        }
-
-        /* Shaffof o'rta qism */
-        .scan-area::before {
-            content: '';
-            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: transparent;
-            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            pointer-events: none;
         }
 
-        /* Burchak chiziqlari */
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+        }
+
+        .header-text {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        /* Close button */
+        .close-btn {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(60, 60, 60, 0.8);
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 40;
+            backdrop-filter: blur(10px);
+        }
+
+        .close-btn:active {
+            transform: scale(0.9);
+            background: rgba(80, 80, 80, 0.9);
+        }
+
+        /* Scan area */
+        .scan-frame {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        /* Burchaklar */
         .corner {
             position: absolute;
             width: 60px;
@@ -85,38 +124,38 @@
         }
 
         .corner.tl {
-            top: -3px;
-            left: -3px;
+            top: 0;
+            left: 0;
             border-right: none;
             border-bottom: none;
             border-radius: 20px 0 0 0;
         }
 
         .corner.tr {
-            top: -3px;
-            right: -3px;
+            top: 0;
+            right: 0;
             border-left: none;
             border-bottom: none;
             border-radius: 0 20px 0 0;
         }
 
         .corner.bl {
-            bottom: -3px;
-            left: -3px;
+            bottom: 0;
+            left: 0;
             border-right: none;
             border-top: none;
             border-radius: 0 0 0 20px;
         }
 
         .corner.br {
-            bottom: -3px;
-            right: -3px;
+            bottom: 0;
+            right: 0;
             border-left: none;
             border-top: none;
             border-radius: 0 0 20px 0;
         }
 
-        /* Animatsiyali chiziq */
+        /* Scan line */
         .scan-line {
             position: absolute;
             left: 10px;
@@ -128,42 +167,50 @@
         }
 
         @keyframes scan {
-            0%, 100% { top: 10px; opacity: 0.5; }
+            0%, 100% { top: 10px; opacity: 0.6; }
             50% { top: calc(100% - 12px); opacity: 1; }
         }
 
-        /* Matn */
-        .info-text {
+        /* Bottom text */
+        .bottom-text {
             position: fixed;
-            bottom: 120px;
+            bottom: 140px;
             left: 0;
             right: 0;
             text-align: center;
-            color: #fff;
-            font-size: 17px;
-            font-weight: 500;
             z-index: 20;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
         }
 
-        /* Chiroq tugmasi */
+        .bottom-text-inner {
+            display: inline-block;
+            background: rgba(40, 40, 40, 0.85);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Torch button */
         .torch-btn {
             position: fixed;
-            bottom: 30px;
+            bottom: 40px;
             right: 30px;
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: rgba(40, 40, 40, 0.9);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(60, 60, 60, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 26px;
             cursor: pointer;
             z-index: 20;
-            transition: all 0.3s;
             backdrop-filter: blur(10px);
+            transition: all 0.2s;
         }
 
         .torch-btn:active {
@@ -173,30 +220,44 @@
         .torch-btn.active {
             background: rgba(250, 204, 21, 0.9);
             border-color: #fbbf24;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
         }
 
-        /* Zoom container */
+        /* Zoom indicator */
         .zoom-container {
             position: fixed;
-            bottom: 100px;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
             display: none;
             flex-direction: column;
             align-items: center;
-            z-index: 20;
-            gap: 8px;
+            z-index: 25;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .zoom-container.show {
             display: flex;
+            opacity: 1;
         }
 
-        /* Zoom bar */
+        .zoom-text {
+            background: rgba(40, 40, 40, 0.9);
+            color: #4ade80;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 700;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
         .zoom-bar {
             position: relative;
             width: 200px;
-            height: 32px;
+            height: 24px;
             display: flex;
             align-items: center;
         }
@@ -207,93 +268,56 @@
             background: rgba(255, 255, 255, 0.2);
             border-radius: 2px;
             position: relative;
+            overflow: visible;
         }
 
-        /* Chiziqlar pattern */
         .zoom-track::before {
             content: '';
             position: absolute;
-            top: -8px;
+            top: -10px;
             left: 0;
             right: 0;
-            height: 20px;
+            height: 24px;
             background: repeating-linear-gradient(
                 90deg,
-                rgba(255, 255, 255, 0.6) 0px,
-                rgba(255, 255, 255, 0.6) 2px,
+                rgba(255, 255, 255, 0.5) 0px,
+                rgba(255, 255, 255, 0.5) 2px,
                 transparent 2px,
-                transparent 5px
+                transparent 6px
             );
         }
 
         .zoom-progress {
             position: absolute;
             left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 4px;
+            top: 0;
+            height: 100%;
             background: #4ade80;
             border-radius: 2px;
             width: 0%;
-            transition: width 0.1s;
+            transition: width 0.1s ease;
         }
 
-        /* Yashil indicator */
         .zoom-indicator {
             position: absolute;
             left: 0%;
             top: 50%;
             transform: translate(-50%, -50%);
             width: 4px;
-            height: 20px;
+            height: 24px;
             background: #4ade80;
             border-radius: 2px;
-            box-shadow: 0 0 10px #4ade80;
-            transition: left 0.1s;
+            box-shadow: 0 0 12px #4ade80;
+            transition: left 0.1s ease;
         }
 
-        /* Zoom text */
-        .zoom-text {
-            background: rgba(40, 40, 40, 0.9);
-            color: #4ade80;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 15px;
-            font-weight: 600;
-            backdrop-filter: blur(10px);
-        }
-
-        /* Yopish tugmasi */
-        .close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(40, 40, 40, 0.8);
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 20;
-            backdrop-filter: blur(10px);
-        }
-
-        .close-btn:active {
-            transform: scale(0.9);
-        }
-
-        /* Natija modal */
+        /* Result modal */
         .result-modal {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 0, 0, 0.95);
             display: none;
             align-items: center;
@@ -336,7 +360,7 @@
             word-break: break-all;
             margin-bottom: 24px;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
             max-height: 180px;
             overflow-y: auto;
         }
@@ -384,7 +408,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            z-index: 30;
+            z-index: 50;
             color: #fff;
         }
 
@@ -402,11 +426,12 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Html5-qrcode yashirish */
+        /* Hide html5-qrcode UI */
         #reader__dashboard_section,
         #reader__dashboard_section_csr,
         #reader__header_message,
-        #reader__scan_region {
+        #reader__scan_region,
+        #reader > div:not(video) {
             display: none !important;
         }
     </style>
@@ -414,9 +439,15 @@
 <body>
     <div id="reader"></div>
     
-    <div class="overlay"></div>
+    <div class="dark-overlay"></div>
+
+    <div class="header">
+        <div class="header-text">Diruni skanerlang</div>
+    </div>
+
+    <button class="close-btn" onclick="closeScanner()">✕</button>
     
-    <div class="scan-area">
+    <div class="scan-frame">
         <div class="corner tl"></div>
         <div class="corner tr"></div>
         <div class="corner bl"></div>
@@ -424,20 +455,20 @@
         <div class="scan-line"></div>
     </div>
 
-    <div class="info-text">DataMatrix kodini skanerlang</div>
+    <div class="bottom-text">
+        <div class="bottom-text-inner">DataMatrix kodini skanerlang</div>
+    </div>
 
-    <button class="close-btn" onclick="closeScanner()">✕</button>
-    
     <button class="torch-btn" id="torchBtn" onclick="toggleTorch()">🔦</button>
 
-    <!-- Zoom Indicator -->
     <div class="zoom-container" id="zoomContainer">
-        <div class="zoom-bar">
-            <div class="zoom-track"></div>
-            <div class="zoom-progress" id="zoomProgress"></div>
-            <div class="zoom-indicator" id="zoomIndicator"></div>
-        </div>
         <div class="zoom-text" id="zoomText">1.0x</div>
+        <div class="zoom-bar">
+            <div class="zoom-track">
+                <div class="zoom-progress" id="zoomProgress"></div>
+                <div class="zoom-indicator" id="zoomIndicator"></div>
+            </div>
+        </div>
     </div>
 
     <div class="loading" id="loading">
@@ -448,7 +479,7 @@
     <div class="result-modal" id="resultModal">
         <div class="result-box">
             <div class="result-icon">✅</div>
-            <div class="result-title">Muvaffaqiyatli!</div>
+            <div class="result-title">Muvaffaqiyatli skanerlandi!</div>
             <div class="result-content" id="resultContent"></div>
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="sendToBot()">Botga Yuborish</button>
@@ -465,7 +496,9 @@
         let currentStream = null;
         let currentZoom = 1.0;
         let maxZoom = 3.0;
+        let minZoom = 1.0;
         let zoomTimeout = null;
+        let videoTrack = null;
 
         tg.expand();
         tg.ready();
@@ -474,10 +507,6 @@
         async function startCamera() {
             try {
                 html5Qrcode = new Html5Qrcode("reader");
-                
-                const qrCodeSuccessCallback = (decodedText) => {
-                    onScanSuccess(decodedText);
-                };
                 
                 const config = {
                     fps: 10,
@@ -488,69 +517,78 @@
                 await html5Qrcode.start(
                     { facingMode: "environment" },
                     config,
-                    qrCodeSuccessCallback
+                    (decodedText) => onScanSuccess(decodedText)
                 );
 
-                // Stream olish
                 setTimeout(() => {
                     const videoElement = document.querySelector('#reader video');
                     if (videoElement && videoElement.srcObject) {
                         currentStream = videoElement.srcObject;
-                        setupZoom(videoElement);
+                        videoTrack = currentStream.getVideoTracks()[0];
+                        setupZoom();
                     }
                     document.getElementById('loading').style.display = 'none';
                 }, 1000);
 
             } catch (err) {
                 console.error("Kamera xatosi:", err);
-                document.getElementById('loading').innerHTML = '<div style="color: #ff4444;">Kamera ochilmadi. Ruxsat bering.</div>';
+                document.getElementById('loading').innerHTML = '<div style="color: #ff4444;">Kamera ochilmadi</div>';
             }
         }
 
         // Zoom sozlash
-        function setupZoom(videoElement) {
-            const track = currentStream.getVideoTracks()[0];
-            const capabilities = track.getCapabilities();
+        function setupZoom() {
+            if (!videoTrack) return;
+
+            const capabilities = videoTrack.getCapabilities();
             
             if (capabilities.zoom) {
-                maxZoom = capabilities.zoom.max;
-                currentZoom = capabilities.zoom.min || 1.0;
+                maxZoom = capabilities.zoom.max || 3.0;
+                minZoom = capabilities.zoom.min || 1.0;
+                currentZoom = minZoom;
             }
 
-            // Touch events
+            const videoElement = document.querySelector('#reader video');
+            if (!videoElement) return;
+
             let touchStartY = 0;
             let startZoom = currentZoom;
+            let isZooming = false;
 
             videoElement.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     touchStartY = e.touches[0].clientY;
                     startZoom = currentZoom;
+                    isZooming = true;
                     showZoomIndicator();
                 }
-            });
+            }, { passive: true });
 
             videoElement.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1) {
+                if (e.touches.length === 1 && isZooming) {
                     const touchY = e.touches[0].clientY;
                     const deltaY = touchStartY - touchY;
-                    const zoomChange = deltaY / 100;
+                    const zoomChange = deltaY / 150;
                     
-                    currentZoom = Math.max(1.0, Math.min(maxZoom, startZoom + zoomChange));
-                    applyZoom(track);
+                    currentZoom = Math.max(minZoom, Math.min(maxZoom, startZoom + zoomChange));
+                    applyZoom();
                     updateZoomUI();
                     showZoomIndicator();
                 }
-            });
+            }, { passive: true });
 
             videoElement.addEventListener('touchend', () => {
+                isZooming = false;
                 hideZoomIndicator();
-            });
+            }, { passive: true });
         }
 
         // Zoom qo'llash
-        async function applyZoom(track) {
+        async function applyZoom() {
+            if (!videoTrack) return;
+            
             try {
-                await track.applyConstraints({
+                await videoTrack.applyConstraints({
                     advanced: [{ zoom: currentZoom }]
                 });
             } catch (err) {
@@ -558,30 +596,29 @@
             }
         }
 
-        // Zoom UI yangilash
+        // Zoom UI
         function updateZoomUI() {
-            const percent = ((currentZoom - 1.0) / (maxZoom - 1.0)) * 100;
+            const percent = ((currentZoom - minZoom) / (maxZoom - minZoom)) * 100;
             document.getElementById('zoomProgress').style.width = percent + '%';
             document.getElementById('zoomIndicator').style.left = percent + '%';
             document.getElementById('zoomText').textContent = currentZoom.toFixed(1) + 'x';
         }
 
-        // Zoom indicator ko'rsatish
         function showZoomIndicator() {
             clearTimeout(zoomTimeout);
-            document.getElementById('zoomContainer').classList.add('show');
+            const container = document.getElementById('zoomContainer');
+            container.classList.add('show');
         }
 
-        // Zoom indicator yashirish
         function hideZoomIndicator() {
             zoomTimeout = setTimeout(() => {
                 document.getElementById('zoomContainer').classList.remove('show');
             }, 1500);
         }
 
-        // Scan muvaffaqiyatli
+        // Scan success
         function onScanSuccess(decodedText) {
-            if (scannedData) return; // Bir marta scan qilish
+            if (scannedData) return;
             
             scannedData = decodedText;
             
@@ -597,25 +634,20 @@
             }
         }
 
-        function onScanError(error) {
-            // Xatoliklarni ignore qilish
-        }
-
-        // Chiroqni yoqish/o'chirish
+        // Chiroq
         async function toggleTorch() {
+            if (!videoTrack) return;
+
             try {
-                if (!currentStream) return;
-
-                const track = currentStream.getVideoTracks()[0];
-                const capabilities = track.getCapabilities();
-
+                const capabilities = videoTrack.getCapabilities();
+                
                 if (!capabilities.torch) {
                     alert("Chiroq qo'llab-quvvatlanmaydi");
                     return;
                 }
 
                 torchEnabled = !torchEnabled;
-                await track.applyConstraints({
+                await videoTrack.applyConstraints({
                     advanced: [{ torch: torchEnabled }]
                 });
 
@@ -649,7 +681,7 @@
             scannedData = null;
             document.getElementById('resultModal').classList.remove('show');
             document.getElementById('loading').style.display = 'block';
-            setTimeout(() => startCamera(), 300);
+            setTimeout(startCamera, 300);
         }
 
         // Yopish
@@ -662,13 +694,7 @@
 
         // Boshlash
         window.addEventListener('load', () => {
-            // Telegram-da ochilishini kutish
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                setTimeout(startCamera, 800);
-            } else {
-                // Test rejimi
-                setTimeout(startCamera, 500);
-            }
+            setTimeout(startCamera, 500);
         });
     </script>
 </body>
