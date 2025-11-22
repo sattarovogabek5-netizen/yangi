@@ -175,6 +175,94 @@
             border-color: #fbbf24;
         }
 
+        /* Zoom container */
+        .zoom-container {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 20;
+            gap: 8px;
+        }
+
+        .zoom-container.show {
+            display: flex;
+        }
+
+        /* Zoom bar */
+        .zoom-bar {
+            position: relative;
+            width: 200px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+        }
+
+        .zoom-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        /* Chiziqlar pattern */
+        .zoom-track::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.6) 0px,
+                rgba(255, 255, 255, 0.6) 2px,
+                transparent 2px,
+                transparent 5px
+            );
+        }
+
+        .zoom-progress {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 4px;
+            background: #4ade80;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        /* Yashil indicator */
+        .zoom-indicator {
+            position: absolute;
+            left: 0%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 20px;
+            background: #4ade80;
+            border-radius: 2px;
+            box-shadow: 0 0 10px #4ade80;
+            transition: left 0.1s;
+        }
+
+        /* Zoom text */
+        .zoom-text {
+            background: rgba(40, 40, 40, 0.9);
+            color: #4ade80;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
         /* Yopish tugmasi */
         .close-btn {
             position: fixed;
@@ -342,6 +430,16 @@
     
     <button class="torch-btn" id="torchBtn" onclick="toggleTorch()">🔦</button>
 
+    <!-- Zoom Indicator -->
+    <div class="zoom-container" id="zoomContainer">
+        <div class="zoom-bar">
+            <div class="zoom-track"></div>
+            <div class="zoom-progress" id="zoomProgress"></div>
+            <div class="zoom-indicator" id="zoomIndicator"></div>
+        </div>
+        <div class="zoom-text" id="zoomText">1.0x</div>
+    </div>
+
     <div class="loading" id="loading">
         <div class="spinner"></div>
         <div>Kamera yuklanmoqda...</div>
@@ -365,6 +463,9 @@
         let scannedData = null;
         let torchEnabled = false;
         let currentStream = null;
+        let currentZoom = 1.0;
+        let maxZoom = 3.0;
+        let zoomTimeout = null;
 
         tg.expand();
         tg.ready();
@@ -395,6 +496,7 @@
                     const videoElement = document.querySelector('#reader video');
                     if (videoElement && videoElement.srcObject) {
                         currentStream = videoElement.srcObject;
+                        setupZoom(videoElement);
                     }
                     document.getElementById('loading').style.display = 'none';
                 }, 1000);
@@ -405,8 +507,82 @@
             }
         }
 
+        // Zoom sozlash
+        function setupZoom(videoElement) {
+            const track = currentStream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            
+            if (capabilities.zoom) {
+                maxZoom = capabilities.zoom.max;
+                currentZoom = capabilities.zoom.min || 1.0;
+            }
+
+            // Touch events
+            let touchStartY = 0;
+            let startZoom = currentZoom;
+
+            videoElement.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStartY = e.touches[0].clientY;
+                    startZoom = currentZoom;
+                    showZoomIndicator();
+                }
+            });
+
+            videoElement.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) {
+                    const touchY = e.touches[0].clientY;
+                    const deltaY = touchStartY - touchY;
+                    const zoomChange = deltaY / 100;
+                    
+                    currentZoom = Math.max(1.0, Math.min(maxZoom, startZoom + zoomChange));
+                    applyZoom(track);
+                    updateZoomUI();
+                    showZoomIndicator();
+                }
+            });
+
+            videoElement.addEventListener('touchend', () => {
+                hideZoomIndicator();
+            });
+        }
+
+        // Zoom qo'llash
+        async function applyZoom(track) {
+            try {
+                await track.applyConstraints({
+                    advanced: [{ zoom: currentZoom }]
+                });
+            } catch (err) {
+                console.error("Zoom xatosi:", err);
+            }
+        }
+
+        // Zoom UI yangilash
+        function updateZoomUI() {
+            const percent = ((currentZoom - 1.0) / (maxZoom - 1.0)) * 100;
+            document.getElementById('zoomProgress').style.width = percent + '%';
+            document.getElementById('zoomIndicator').style.left = percent + '%';
+            document.getElementById('zoomText').textContent = currentZoom.toFixed(1) + 'x';
+        }
+
+        // Zoom indicator ko'rsatish
+        function showZoomIndicator() {
+            clearTimeout(zoomTimeout);
+            document.getElementById('zoomContainer').classList.add('show');
+        }
+
+        // Zoom indicator yashirish
+        function hideZoomIndicator() {
+            zoomTimeout = setTimeout(() => {
+                document.getElementById('zoomContainer').classList.remove('show');
+            }, 1500);
+        }
+
         // Scan muvaffaqiyatli
         function onScanSuccess(decodedText) {
+            if (scannedData) return; // Bir marta scan qilish
+            
             scannedData = decodedText;
             
             if (tg.HapticFeedback) {
@@ -486,7 +662,13 @@
 
         // Boshlash
         window.addEventListener('load', () => {
-            setTimeout(startCamera, 500);
+            // Telegram-da ochilishini kutish
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                setTimeout(startCamera, 800);
+            } else {
+                // Test rejimi
+                setTimeout(startCamera, 500);
+            }
         });
     </script>
 </body>
