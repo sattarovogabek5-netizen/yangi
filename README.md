@@ -43,7 +43,6 @@
             width: 100vw !important;
             height: 100vh !important;
             object-fit: cover !important;
-            transition: transform 0.1s ease-out;
         }
 
         /* Qorong'u overlay */
@@ -391,6 +390,28 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Error message */
+        .error-message {
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 300px;
+            margin: 20px;
+        }
+
+        .retry-btn {
+            background: #4ade80;
+            color: black;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
         /* Hide html5-qrcode UI */
         #reader__dashboard_section,
         #reader__dashboard_section_csr,
@@ -458,7 +479,7 @@
         let torchEnabled = false;
         let currentStream = null;
         let currentZoom = 1.0;
-        let maxZoom = 5.0;
+        let maxZoom = 3.0;
         let minZoom = 1.0;
         let videoTrack = null;
         let isScanning = false;
@@ -466,117 +487,96 @@
         tg.expand();
         tg.ready();
 
-        // Kamerani ochish
+        // Kamerani ochish - soddalashtirilgan versiya
         async function startCamera() {
             try {
-                // Optimallashtirilgan kamera sozlamalari
-                currentStream = await navigator.mediaDevices.getUserMedia({
+                console.log("Kamera ochish boshlandi...");
+                
+                // Soddaroq kamera sozlamalari
+                const constraints = {
                     video: {
                         facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 },
-                        frameRate: { ideal: 60 }, // Yuqori FPS
-                        focusMode: "continuous"
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
                     }
-                });
+                };
+
+                // Kamerani ochish
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log("Kamera muvaffaqiyatli ochildi");
 
                 videoTrack = currentStream.getVideoTracks()[0];
-                
-                // Kamera imkoniyatlarini tekshirish
-                const capabilities = videoTrack.getCapabilities();
-                console.log("Kamera capabilities:", capabilities);
-                
-                // Zoom sozlash
-                if (capabilities.zoom) {
-                    maxZoom = Math.min(capabilities.zoom.max, 10.0);
-                    minZoom = capabilities.zoom.min || 1.0;
-                    currentZoom = minZoom;
-                    console.log("Zoom sozlandi:", minZoom, "-", maxZoom);
-                }
+                console.log("Video track:", videoTrack);
 
-                // HTML5 QRCode bilan ulash
+                // HTML5 QRCode ni ishga tushirish
                 html5Qrcode = new Html5Qrcode("reader");
                 
+                // Soddalashtirilgan konfiguratsiya
                 const config = {
-                    fps: 60, // Maksimal FPS
-                    qrbox: {
-                        width: 280,
-                        height: 280
-                    },
-                    aspectRatio: 1.0,
-                    disableFlip: false,
-                    supportedScanTypes: [
-                        Html5QrcodeScanType.SCAN_TYPE_CAMERA
-                    ]
+                    fps: 10,
+                    qrbox: 250,
+                    aspectRatio: 1.0
                 };
 
                 await html5Qrcode.start(
-                    { 
-                        facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 },
-                        frameRate: { ideal: 60 }
-                    },
+                    { facingMode: "environment" },
                     config,
                     onScanSuccess,
                     onScanFailure
-                ).catch(err => {
-                    console.log("HTML5Qrcode start error:", err);
-                    // Qayta urinish - soddaroq sozlamalar bilan
-                    return html5Qrcode.start(
-                        { facingMode: "environment" },
-                        { 
-                            fps: 30,
-                            qrbox: 280 
-                        },
-                        onScanSuccess,
-                        onScanFailure
-                    );
-                });
+                );
 
-                // Zoom va UI ni sozlash
-                applyZoom();
-                updateZoomUI();
+                console.log("QR skaner muvaffaqiyatli ishga tushdi");
                 
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    isScanning = true;
-                }, 1000);
+                // Yuklashni yashirish
+                document.getElementById('loading').style.display = 'none';
+                isScanning = true;
 
             } catch (err) {
                 console.error("Kamera xatosi:", err);
-                document.getElementById('loading').innerHTML = 
-                    '<div style="color: #ff4444; text-align: center;">' +
-                    '<div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>' +
-                    'Kamera ochilmadi<br>' +
-                    '<button onclick="startCamera()" style="margin-top: 15px; padding: 10px 20px; background: #4ade80; border: none; border-radius: 10px; color: black; font-weight: bold;">Qayta urinish</button>' +
-                    '</div>';
+                showCameraError(err);
             }
+        }
+
+        // Kamera xatosini ko'rsatish
+        function showCameraError(error) {
+            const loading = document.getElementById('loading');
+            loading.innerHTML = `
+                <div class="error-message">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📷</div>
+                    <div style="font-weight: bold; margin-bottom: 10px;">Kamera ochilmadi</div>
+                    <div style="font-size: 14px; margin-bottom: 15px; opacity: 0.8;">
+                        Iltimos, kameraga ruxsat bering yoki qayta urinib ko'ring
+                    </div>
+                    <button class="retry-btn" onclick="retryCamera()">Qayta Urinish</button>
+                </div>
+            `;
+        }
+
+        // Qayta urinish
+        function retryCamera() {
+            document.getElementById('loading').innerHTML = `
+                <div class="spinner"></div>
+                <div>Kamera yuklanmoqda...</div>
+            `;
+            setTimeout(startCamera, 500);
         }
 
         // Zoom in
         function zoomIn() {
             if (currentZoom < maxZoom) {
-                currentZoom = Math.min(maxZoom, currentZoom + 0.5);
+                currentZoom = Math.min(maxZoom, currentZoom + 0.3);
                 applyZoom();
                 updateZoomUI();
-                
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.impactOccurred('light');
-                }
             }
         }
 
         // Zoom out
         function zoomOut() {
             if (currentZoom > minZoom) {
-                currentZoom = Math.max(minZoom, currentZoom - 0.5);
+                currentZoom = Math.max(minZoom, currentZoom - 0.3);
                 applyZoom();
                 updateZoomUI();
-                
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.impactOccurred('light');
-                }
             }
         }
 
@@ -588,28 +588,12 @@
                 const capabilities = videoTrack.getCapabilities();
                 
                 if (capabilities.zoom) {
-                    // Hardware zoom
                     await videoTrack.applyConstraints({
                         advanced: [{ zoom: currentZoom }]
                     });
-                } else {
-                    // CSS zoom fallback
-                    const videoElement = document.querySelector('#reader video');
-                    if (videoElement) {
-                        videoElement.style.transform = `scale(${currentZoom})`;
-                        videoElement.style.transformOrigin = 'center center';
-                    }
                 }
-                console.log("Zoom qo'llandi:", currentZoom);
-                
             } catch (err) {
-                console.error("Zoom xatosi:", err);
-                // CSS zoom fallback
-                const videoElement = document.querySelector('#reader video');
-                if (videoElement) {
-                    videoElement.style.transform = `scale(${currentZoom})`;
-                    videoElement.style.transformOrigin = 'center center';
-                }
+                console.log("Zoom xatosi:", err);
             }
         }
 
@@ -618,7 +602,7 @@
             document.getElementById('zoomText').textContent = currentZoom.toFixed(1) + 'x';
         }
 
-        // Scan success - tezroq ishlashi uchun
+        // Scan success
         function onScanSuccess(decodedText) {
             if (scannedData || !isScanning) return;
             
@@ -627,27 +611,28 @@
             
             console.log("QR kod topildi:", decodedText);
             
+            // Haptic feedback
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.notificationOccurred('success');
             }
 
-            // Tezkor modal ko'rsatish
+            // Natijani ko'rsatish
             document.getElementById('resultContent').textContent = decodedText;
             document.getElementById('resultModal').classList.add('show');
             
-            // Kamerani to'xtatish
+            // Skanerlashni to'xtatish
             if (html5Qrcode && html5Qrcode.isScanning) {
                 html5Qrcode.stop().catch(err => console.log("Stop error:", err));
             }
         }
 
-        // Scan failure - optimallashtirilgan
+        // Scan failure
         function onScanFailure(error) {
-            // Faqat og'hat xatolarni ko'rsatish
+            // Oddiy xatolarni ignore qilish
             if (!error || error === "NotFoundException" || error.includes("No QR")) {
-                return; // Normal holat, QR topilmadi
+                return;
             }
-            console.log("Scan error (expected):", error);
+            console.log("Scan error:", error);
         }
 
         // Chiroq
@@ -658,13 +643,7 @@
                 const capabilities = videoTrack.getCapabilities();
                 
                 if (!capabilities.torch) {
-                    if (tg.showPopup) {
-                        tg.showPopup({
-                            title: "Diqqat",
-                            message: "Ushbu qurilmada chiroq qo'llab-quvvatlanmaydi",
-                            buttons: [{ type: "ok" }]
-                        });
-                    }
+                    alert("Ushbu qurilmada chiroq qo'llab-quvvatlanmaydi");
                     return;
                 }
 
@@ -681,10 +660,6 @@
                     btn.classList.remove('active');
                     btn.textContent = '🔦';
                 }
-
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.impactOccurred('light');
-                }
             } catch (err) {
                 console.error("Chiroq xatosi:", err);
             }
@@ -699,23 +674,14 @@
         }
 
         // Qayta skanerlash
-        async function scanAgain() {
+        function scanAgain() {
             scannedData = null;
             document.getElementById('resultModal').classList.remove('show');
             document.getElementById('loading').style.display = 'block';
             
-            // Qisqa kutish va qayta boshlash
-            setTimeout(async () => {
-                try {
-                    if (html5Qrcode) {
-                        await html5Qrcode.stop();
-                    }
-                    await startCamera();
-                } catch (err) {
-                    console.log("Restart error:", err);
-                    startCamera();
-                }
-            }, 300);
+            setTimeout(() => {
+                startCamera();
+            }, 500);
         }
 
         // Yopish
@@ -730,7 +696,7 @@
             tg.close();
         }
 
-        // Touch zoom uchun
+        // Touch zoom
         let initialDistance = null;
 
         document.addEventListener('touchstart', (e) => {
@@ -766,15 +732,26 @@
 
         // Boshlash
         window.addEventListener('load', () => {
-            setTimeout(startCamera, 500);
+            console.log("Sayt yuklandi, kamera ochilmoqda...");
+            setTimeout(startCamera, 1000);
         });
 
-        // Oldindan yuklash uchun
-        window.addEventListener('beforeunload', () => {
-            if (html5Qrcode && html5Qrcode.isScanning) {
-                html5Qrcode.stop();
+        // Ruxsatlarni tekshirish
+        async function checkPermissions() {
+            try {
+                const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+                console.log("Camera permission:", permissionStatus.state);
+                
+                permissionStatus.onchange = () => {
+                    console.log("Camera permission changed:", permissionStatus.state);
+                };
+            } catch (err) {
+                console.log("Permission API not supported");
             }
-        });
+        }
+
+        // Dastlabki tekshiruv
+        checkPermissions();
     </script>
 </body>
 </html>
