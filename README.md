@@ -1,254 +1,612 @@
-// QR Scanner Mini App (React)
-// Fayl: QRScannerMiniApp.jsx
-// Tavsif: Bu single-file React komponenti - kamera orqali QR kodni aniqlash, tasvirni avtomatik yaxshilash (kontrast/yoritish/sharpen), zoom va rasm yuklash orqali skan qilishni qo'llab-quvvatlaydi.
-// Talablar: npm install jsqr
-// Qo'llanma:
-// 1) React loyihangizga ushbu faylni qo'shing (masalan src/QRScannerMiniApp.jsx)
-// 2) `npm install jsqr` bajarib oling
-// 3) App ichida: import QRScannerMiniApp from './QRScannerMiniApp'; va <QRScannerMiniApp /> qo'ying
-
-import React, { useRef, useEffect, useState } from 'react';
-import jsQR from 'jsqr';
-
-export default function QRScannerMiniApp() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [stream, setStream] = useState(null);
-  const [scanning, setScanning] = useState(false);
-  const [decoded, setDecoded] = useState(null);
-  const [zoom, setZoom] = useState(1);
-  const [supportsZoom, setSupportsZoom] = useState(false);
-  const trackRef = useRef(null);
-  const [torchOn, setTorchOn] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const animationRef = useRef(null);
-
-  useEffect(() => {
-    return () => stopCamera();
-  }, []);
-
-  async function startCamera() {
-    try {
-      const constraints = {
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      };
-      const s = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(s);
-      if (videoRef.current) {
-        videoRef.current.srcObject = s;
-        videoRef.current.play().catch(() => {});
-      }
-      const tracks = s.getVideoTracks();
-      if (tracks && tracks.length) {
-        trackRef.current = tracks[0];
-        const caps = trackRef.current.getCapabilities ? trackRef.current.getCapabilities() : {};
-        if (caps.zoom) setSupportsZoom(true);
-      }
-      setScanning(true);
-      requestAnimationFrame(tick);
-    } catch (err) {
-      console.error('Camera start error', err);
-      alert('Kamera ochib bo\'lmadi: iltimos brauzerga ruxsat bering yoki HTTPS orqali oching.');
-    }
-  }
-
-  function stopCamera() {
-    setScanning(false);
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      setStream(null);
-    }
-    if (trackRef.current) trackRef.current = null;
-  }
-
-  async function setCameraZoom(z) {
-    setZoom(z);
-    try {
-      if (trackRef.current && trackRef.current.applyConstraints) {
-        await trackRef.current.applyConstraints({ advanced: [{ zoom: z }] });
-      } else if (videoRef.current) {
-        videoRef.current.style.transform = `scale(${z})`;
-      }
-    } catch (e) {
-      if (videoRef.current) videoRef.current.style.transform = `scale(${z})`;
-    }
-  }
-
-  async function toggleTorch() {
-    try {
-      if (!trackRef.current) return;
-      const imageCapture = new window.ImageCapture(trackRef.current);
-      const capabilities = await imageCapture.getPhotoCapabilities();
-      if (capabilities.torch || (trackRef.current.getCapabilities && trackRef.current.getCapabilities().torch)) {
-        torchOn ? await trackRef.current.applyConstraints({ advanced: [{ torch: false }] }) : await trackRef.current.applyConstraints({ advanced: [{ torch: true }] });
-        setTorchOn(!torchOn);
-      } else {
-        alert('Torch (flash) qo\'llab-quvvatlanmaydi.');
-      }
-    } catch (err) {
-      console.warn('Torch error', err);
-      alert('Flashni yoqib bo\'lmadi yoki brauzer qo\'llab-quvvatlamaydi.');
-    }
-  }
-
-  function enhanceImage(ctx, w, h) {
-    const imgData = ctx.getImageData(0, 0, w, h);
-    const data = imgData.data;
-    const contrast = 1.2;
-    const brightness = 10;
-    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-    for (let i = 0; i < data.length; i += 4) {
-      for (let c = 0; c < 3; c++) {
-        let v = data[i + c];
-        v = factor * (v - 128) + 128 + brightness;
-        data[i + c] = Math.max(0, Math.min(255, v));
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-    const copy = ctx.getImageData(0, 0, w, h);
-    const out = ctx.createImageData(w, h);
-    for (let y = 1; y < h - 1; y++) {
-      for (let x = 1; x < w - 1; x++) {
-        for (let c = 0; c < 3; c++) {
-          const i = (y * w + x) * 4 + c;
-          const center = copy.data[i];
-          const lap = -copy.data[i - 4] - copy.data[i + 4] - copy.data[i - w * 4] - copy.data[i + w * 4] + 4 * center;
-          let val = center + 0.3 * lap;
-          out.data[i] = Math.max(0, Math.min(255, val));
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner Mini App</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .scanner-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        out.data[(y * w + x) * 4 + 3] = 255;
-      }
-    }
-    ctx.putImageData(out, 0, 0);
-  }
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            height: 360px;
+        }
+        .video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .btn-warning {
+            background: #d97706;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #b45309;
+        }
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #047857;
+        }
+        .file-input {
+            display: none;
+        }
+        .result-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+        .qr-result {
+            word-break: break-all;
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #e5e7eb;
+        }
+        .zoom-control {
+            margin-top: 20px;
+        }
+        .zoom-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .help-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        .error-message {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #fecaca;
+        }
+        .processing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .grid-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4">
+    <div id="root"></div>
 
-  function tick() {
-    if (!scanning) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) {
-      animationRef.current = requestAnimationFrame(tick);
-      return;
-    }
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width = video.videoWidth || 640;
-    const h = canvas.height = video.videoHeight || 480;
-    try {
-      ctx.drawImage(video, 0, 0, w, h);
-      enhanceImage(ctx, w, h);
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'both' });
-      if (code) {
-        setDecoded({ text: code.data, location: code.location });
-        drawLocation(ctx, code.location);
-        setScanning(false);
-        setTimeout(() => setScanning(true), 1500);
-      } else {
-        setDecoded(null);
-      }
-    } catch (e) {
-      console.warn('Tick error', e);
-    }
-    animationRef.current = requestAnimationFrame(tick);
-  }
+    <script type="text/babel">
+        const { useRef, useEffect, useState } = React;
 
-  function drawLocation(ctx, loc) {
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'lime';
-    ctx.beginPath();
-    ctx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
-    ctx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
-    ctx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
-    ctx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
-    ctx.closePath();
-    ctx.stroke();
-  }
+        function QRScannerMiniApp() {
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
+            const [stream, setStream] = useState(null);
+            const [scanning, setScanning] = useState(false);
+            const [decoded, setDecoded] = useState(null);
+            const [zoom, setZoom] = useState(1);
+            const [supportsZoom, setSupportsZoom] = useState(false);
+            const [supportsTorch, setSupportsTorch] = useState(false);
+            const trackRef = useRef(null);
+            const [torchOn, setTorchOn] = useState(false);
+            const [processing, setProcessing] = useState(false);
+            const [error, setError] = useState(null);
+            const animationRef = useRef(null);
 
-  async function onFilePicked(e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    setProcessing(true);
-    const img = new Image();
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const maxW = 1280;
-      const scale = Math.min(1, maxW / img.width);
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      enhanceImage(ctx, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'both' });
-      if (code) setDecoded({ text: code.data, location: code.location });
-      else alert('QR topilmadi — tasvirni aniqlashtirish yoki boshqa rasm sinab ko\'ring.');
-      setProcessing(false);
-    };
-    img.onerror = () => { setProcessing(false); alert('Rasm yuklashda xatolik.'); };
-    img.src = URL.createObjectURL(file);
-  }
+            // Kamera o'chirish
+            useEffect(() => {
+                return () => stopCamera();
+            }, []);
 
-  return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h2 className="text-xl font-semibold mb-3">QR Scanner Mini App</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <div className="relative bg-black overflow-hidden rounded-lg" style={{ height: 360 }}>
-            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-            <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full pointer-events-none" />
-          </div>
-          <div className="flex gap-2 mt-2">
-            {!stream ? (
-              <button onClick={startCamera} className="px-3 py-2 rounded bg-blue-600 text-white">Kamerani ishga tushur</button>
-            ) : (
-              <button onClick={stopCamera} className="px-3 py-2 rounded bg-red-600 text-white">Kamerani to'xtat</button>
-            )}
+            // Kamerani ishga tushirish
+            async function startCamera() {
+                try {
+                    setError(null);
+                    const constraints = {
+                        video: { 
+                            facingMode: 'environment', 
+                            width: { ideal: 1280 }, 
+                            height: { ideal: 720 },
+                            zoom: { ideal: zoom }
+                        }
+                    };
+                    
+                    const s = await navigator.mediaDevices.getUserMedia(constraints);
+                    setStream(s);
+                    
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = s;
+                        await videoRef.current.play();
+                    }
+                    
+                    // Kamera qobiliyatlarini tekshirish
+                    const tracks = s.getVideoTracks();
+                    if (tracks && tracks.length) {
+                        trackRef.current = tracks[0];
+                        const caps = trackRef.current.getCapabilities ? trackRef.current.getCapabilities() : {};
+                        
+                        if (caps.zoom) setSupportsZoom(true);
+                        if (caps.torch) setSupportsTorch(true);
+                    }
+                    
+                    setScanning(true);
+                    requestAnimationFrame(tick);
+                } catch (err) {
+                    console.error('Camera start error', err);
+                    setError('Kamera ochib bo\'lmadi: iltimos brauzerga ruxsat bering yoki HTTPS orqali oching.');
+                }
+            }
 
-            <label className="px-3 py-2 rounded bg-gray-200 cursor-pointer">
-              Rasm yuklash
-              <input type="file" accept="image/*" onChange={onFilePicked} className="hidden" />
-            </label>
+            // Kamerani to'xtatish
+            function stopCamera() {
+                setScanning(false);
+                if (animationRef.current) {
+                    cancelAnimationFrame(animationRef.current);
+                    animationRef.current = null;
+                }
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    setStream(null);
+                }
+                if (trackRef.current) {
+                    trackRef.current = null;
+                }
+                setTorchOn(false);
+            }
 
-            <button onClick={toggleTorch} className="px-3 py-2 rounded bg-yellow-500">Flash</button>
-          </div>
+            // Zoom sozlash
+            async function setCameraZoom(value) {
+                const newZoom = Math.max(1, Math.min(5, value));
+                setZoom(newZoom);
+                
+                try {
+                    if (trackRef.current && trackRef.current.applyConstraints) {
+                        await trackRef.current.applyConstraints({ 
+                            advanced: [{ zoom: newZoom }] 
+                        });
+                    }
+                    // Agar kamera zoom qo'llab-quvvatlamasa, CSS transform orqali
+                    if (videoRef.current && !supportsZoom) {
+                        videoRef.current.style.transform = `scale(${newZoom})`;
+                    }
+                } catch (e) {
+                    console.warn('Zoom sozlashda xatolik:', e);
+                    if (videoRef.current) {
+                        videoRef.current.style.transform = `scale(${newZoom})`;
+                    }
+                }
+            }
 
-          <div className="mt-3">
-            <label className="block text-sm">Zoom: <span className="font-medium">{zoom.toFixed(2)}</span></label>
-            <input type="range" min={1} max={3} step={0.05} value={zoom} onChange={(e) => setCameraZoom(Number(e.target.value))} />
-            {!supportsZoom && <div className="text-xs text-gray-500">(Agar brauzer yoki kamera ichki zoom ni qo'llab-quvvatlamasa, CSS shim ishlatiladi.)</div>}
-          </div>
-        </div>
+            // Flash (torch) ni boshqarish
+            async function toggleTorch() {
+                if (!trackRef.current || !supportsTorch) {
+                    alert('Ushbu qurilma yoki brauzer flashni qo\'llab-quvvatlamaydi.');
+                    return;
+                }
 
-        <div>
-          <div className="bg-white rounded p-3 shadow">
-            <h3 className="font-semibold">Natija</h3>
-            {processing && <div>Qayta ishlash... iltimos kuting.</div>}
-            {decoded ? (
-              <div className="mt-2">
-                <div className="break-words p-2 bg-gray-100 rounded">{decoded.text}</div>
-                <div className="mt-2">
-                  <button className="px-3 py-2 rounded bg-green-600 text-white mt-2" onClick={() => { navigator.clipboard.writeText(decoded.text); alert('Matn nusxalandi'); }}>Nusxalash</button>
+                try {
+                    const newTorchState = !torchOn;
+                    await trackRef.current.applyConstraints({ 
+                        advanced: [{ torch: newTorchState }] 
+                    });
+                    setTorchOn(newTorchState);
+                } catch (err) {
+                    console.warn('Flashni boshqarishda xatolik:', err);
+                    alert('Flashni o\'zgartirib bo\'lmadi.');
+                }
+            }
+
+            // Tasvir sifatiini yaxshilash
+            function enhanceImage(ctx, width, height) {
+                const imageData = ctx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                
+                // Kontrast va yorug'likni sozlash
+                const contrast = 1.3;
+                const brightness = 15;
+                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    // RGB kanallari uchun
+                    for (let c = 0; c < 3; c++) {
+                        let value = data[i + c];
+                        value = factor * (value - 128) + 128 + brightness;
+                        data[i + c] = Math.max(0, Math.min(255, value));
+                    }
+                    // Alpha kanalini saqlab qolish
+                    data[i + 3] = 255;
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                
+                // Sharpening (aniqlikni oshirish)
+                const sharpenedData = ctx.getImageData(0, 0, width, height);
+                const output = ctx.createImageData(width, height);
+                
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        for (let c = 0; c < 3; c++) {
+                            const index = (y * width + x) * 4 + c;
+                            const center = sharpenedData.data[index];
+                            
+                            // Laplacian filtr
+                            const laplacian = -sharpenedData.data[index - 4] 
+                                            - sharpenedData.data[index + 4] 
+                                            - sharpenedData.data[index - width * 4] 
+                                            - sharpenedData.data[index + width * 4] 
+                                            + 4 * center;
+                            
+                            let sharpenedValue = center + 0.3 * laplacian;
+                            output.data[index] = Math.max(0, Math.min(255, sharpenedValue));
+                        }
+                        output.data[(y * width + x) * 4 + 3] = 255;
+                    }
+                }
+                
+                ctx.putImageData(output, 0, 0);
+            }
+
+            // QR kodni skan qilish
+            function tick() {
+                if (!scanning || !videoRef.current || !canvasRef.current) {
+                    return;
+                }
+
+                const video = videoRef.current;
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                
+                // Video o'lchamlarini olish
+                const videoWidth = video.videoWidth || 640;
+                const videoHeight = video.videoHeight || 480;
+                
+                // Canvas o'lchamlarini yangilash
+                if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+                    canvas.width = videoWidth;
+                    canvas.height = videoHeight;
+                }
+
+                try {
+                    // Videoni canvasga chizish
+                    ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
+                    
+                    // Tasvirni yaxshilash
+                    enhanceImage(ctx, videoWidth, videoHeight);
+                    
+                    // QR kodni aniqlash
+                    const imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { 
+                        inversionAttempts: 'dontInvert',
+                        canOverwriteImage: false
+                    });
+                    
+                    if (code) {
+                        setDecoded({ text: code.data, location: code.location });
+                        drawLocation(ctx, code.location);
+                        setScanning(false);
+                        setTimeout(() => setScanning(true), 1500);
+                    } else {
+                        setDecoded(null);
+                    }
+                } catch (e) {
+                    console.warn('Skanerlashda xatolik:', e);
+                }
+                
+                animationRef.current = requestAnimationFrame(tick);
+            }
+
+            // QR kod joylashuvini chizish
+            function drawLocation(ctx, location) {
+                if (!location) return;
+                
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.moveTo(location.topLeftCorner.x, location.topLeftCorner.y);
+                ctx.lineTo(location.topRightCorner.x, location.topRightCorner.y);
+                ctx.lineTo(location.bottomRightCorner.x, location.bottomRightCorner.y);
+                ctx.lineTo(location.bottomLeftCorner.x, location.bottomLeftCorner.y);
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            // Fayl yuklash orqali QR kodni skanerlash
+            async function onFilePicked(e) {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                
+                // Fayl turini tekshirish
+                if (!file.type.startsWith('image/')) {
+                    alert('Iltimos, faqat rasm fayllarini yuklang.');
+                    return;
+                }
+                
+                setProcessing(true);
+                setDecoded(null);
+                
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    
+                    // Rasm o'lchamini sozlash
+                    const maxWidth = 1280;
+                    const scale = Math.min(1, maxWidth / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    
+                    // Rasmni chizish
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // Tasvirni yaxshilash
+                    enhanceImage(ctx, canvas.width, canvas.height);
+                    
+                    // QR kodni aniqlash
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { 
+                        inversionAttempts: 'both' 
+                    });
+                    
+                    if (code) {
+                        setDecoded({ text: code.data, location: code.location });
+                        drawLocation(ctx, code.location);
+                    } else {
+                        alert('QR kod topilmadi. Boshqa rasm yoki yaxshiroq sifattagi QR kodni sinab ko\'ring.');
+                    }
+                    
+                    setProcessing(false);
+                };
+                
+                img.onerror = () => {
+                    setProcessing(false);
+                    alert('Rasm yuklashda xatolik yuz berdi.');
+                };
+                
+                img.src = URL.createObjectURL(file);
+            }
+
+            // Matnni nusxalash
+            function copyToClipboard() {
+                if (decoded && decoded.text) {
+                    navigator.clipboard.writeText(decoded.text)
+                        .then(() => {
+                            alert('Matn nusxalandi!');
+                        })
+                        .catch(err => {
+                            console.error('Nusxalashda xatolik:', err);
+                            alert('Nusxalash muvaffaqiyatsiz. Qo\'lda nusxalashni sinab ko\'ring.');
+                        });
+                }
+            }
+
+            return (
+                <div className="scanner-container">
+                    <h1 className="app-title">QR Scanner Mini App</h1>
+                    
+                    {error && (
+                        <div className="error-message">
+                            {error}
+                        </div>
+                    )}
+                    
+                    <div className="grid-layout">
+                        <div>
+                            <div className="video-container">
+                                <video 
+                                    ref={videoRef} 
+                                    className="video-element" 
+                                    playsInline 
+                                    muted 
+                                />
+                                <canvas 
+                                    ref={canvasRef} 
+                                    className="canvas-overlay" 
+                                />
+                            </div>
+                            
+                            <div className="controls">
+                                {!stream ? (
+                                    <button 
+                                        onClick={startCamera} 
+                                        className="btn btn-primary"
+                                    >
+                                        Kamerani ishga tushur
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={stopCamera} 
+                                        className="btn btn-danger"
+                                    >
+                                        Kamerani to'xtat
+                                    </button>
+                                )}
+                                
+                                <label className="btn btn-secondary">
+                                    Rasm yuklash
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={onFilePicked} 
+                                        className="file-input" 
+                                    />
+                                </label>
+                                
+                                <button 
+                                    onClick={toggleTorch} 
+                                    className="btn btn-warning"
+                                    disabled={!supportsTorch}
+                                >
+                                    {torchOn ? 'Flash O\'chir' : 'Flash Yoq'}
+                                </button>
+                            </div>
+                            
+                            <div className="zoom-control">
+                                <label className="section-title">
+                                    Zoom: <span>{zoom.toFixed(2)}x</span>
+                                </label>
+                                <input 
+                                    type="range" 
+                                    min="1" 
+                                    max="5" 
+                                    step="0.1" 
+                                    value={zoom} 
+                                    onChange={(e) => setCameraZoom(Number(e.target.value))}
+                                    className="zoom-slider"
+                                    disabled={!stream}
+                                />
+                                {!supportsZoom && (
+                                    <div className="help-text">
+                                        (Agar brauzer yoki kamera ichki zoom ni qo'llab-quvvatlamasa, CSS shim ishlatiladi.)
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="result-box">
+                            <h3 className="section-title">Natija</h3>
+                            
+                            {processing && (
+                                <div className="processing-indicator">
+                                    <div className="spinner"></div>
+                                    <span>Qayta ishlash... iltimos kuting.</span>
+                                </div>
+                            )}
+                            
+                            {decoded ? (
+                                <div>
+                                    <div className="qr-result">
+                                        {decoded.text}
+                                    </div>
+                                    <button 
+                                        onClick={copyToClipboard} 
+                                        className="btn btn-success"
+                                    >
+                                        Matnni nusxalash
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="help-text">
+                                    Hozircha QR kod topilmadi. Kamerani QR kodga yaqinlashtiring yoki rasm yuklab ko'ring.
+                                </div>
+                            )}
+                            
+                            <div style={{marginTop: '20px'}}>
+                                <h4 className="section-title">Yordamchi sozlamalar</h4>
+                                <ul style={{listStyleType: 'disc', paddingLeft: '20px', fontSize: '0.875rem', color: '#6b7280'}}>
+                                    <li>Yaxshi natija uchun yorug'lik yetarliligiga e'tibor bering.</li>
+                                    <li>Agar QR teskari rangli bo'lsa, ilova avtomatik invert sinab ko'radi.</li>
+                                    <li>Rasm yuklash orqali eskirgan yoki past sifatli QRlarni ham tekshirish mumkin.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="help-text" style={{marginTop: '20px'}}>
+                        Eslatma: Ba'zi telefonlar va brauzerlar kamera flash/torch yoki ichki zoom ni cheklashi mumkin. 
+                        Eng yaxshi ishlash uchun Chrome yoki Edge (Android), Safari (iOS) ning so'nggi versiyasidan foydalaning.
+                    </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-sm text-gray-600 mt-2">Hozircha QR topilmadi — kamerani yaqinlashtirib yoki rasm yuklab ko'ring.</div>
-            )}
+            );
+        }
 
-            <div className="mt-4">
-              <h4 className="font-medium">Yordamchi sozlamalar</h4>
-              <ul className="list-disc pl-5 text-sm text-gray-700">
-                <li>Yaxshi natija uchun yorug'lik yetarliligiga e'tibor bering.</li>
-                <li>Agar QR teskari rangli bo'lsa, ilova avtomatik invert sinab ko'radi.</li>
-                <li>Rasm yuklash orqali eskirgan yoki past sifatli QRlarni ham tekshirish mumkin.</li>
-              </ul>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 text-xs text-gray-500">Eslatma: Ba'zi telefonlar va brauzerlar kamera flash/torch yoki ichki zoom ni cheklashi mumkin. Eng yaxshi ishlash uchun Chrome yoki Edge (Android), Safari (iOS) ning so'nggi versiyasidan foydalaning.</div>
-    </div>
-  );
-}
+        // React ilovasini ishga tushirish
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<QRScannerMiniApp />);
+    </script>
+</body>
+</html>
