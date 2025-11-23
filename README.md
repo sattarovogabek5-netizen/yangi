@@ -24,6 +24,14 @@
     .hint{font-size:13px;color:var(--muted);margin-top:8px}
     /* detection box lines */
     .line{position:absolute;background:lime;opacity:0.9}
+    /* Image enhancement controls */
+    .enhancement-controls {margin-top: 12px; padding: 10px; border: 1px solid #eee; border-radius: 8px;}
+    .enhancement-controls h3 {margin: 0 0 8px 0; font-size: 14px;}
+    .enhancement-sliders {display: flex; flex-direction: column; gap: 8px;}
+    .slider-container {display: flex; align-items: center; gap: 8px;}
+    .slider-container label {min-width: 80px; font-size: 13px;}
+    .slider-container input {flex: 1;}
+    .slider-value {min-width: 30px; text-align: right; font-size: 12px;}
   </style>
 </head>
 <body>
@@ -54,6 +62,36 @@
   <!-- Result panel (ko'rinadi QR topilganda) -->
   <div id="resultPanel" style="display:none;">
     <img id="qrPreview" src="" alt="QR snapshot"/>
+    
+    <!-- Image enhancement controls -->
+    <div class="enhancement-controls">
+      <h3>Tasvirni yaxshilash</h3>
+      <div class="enhancement-sliders">
+        <div class="slider-container">
+          <label for="brightnessSlider">Yorqinlik:</label>
+          <input type="range" id="brightnessSlider" min="0.5" max="2" step="0.05" value="1.35">
+          <span class="slider-value" id="brightnessValue">1.35</span>
+        </div>
+        <div class="slider-container">
+          <label for="contrastSlider">Kontrast:</label>
+          <input type="range" id="contrastSlider" min="0.5" max="2" step="0.05" value="1.15">
+          <span class="slider-value" id="contrastValue">1.15</span>
+        </div>
+        <div class="slider-container">
+          <label for="sharpnessSlider">O'tkir:</label>
+          <input type="range" id="sharpnessSlider" min="0" max="2" step="0.1" value="0">
+          <span class="slider-value" id="sharpnessValue">0</span>
+        </div>
+        <div class="slider-container">
+          <label for="noiseSlider">Shovqin:</label>
+          <input type="range" id="noiseSlider" min="0" max="1" step="0.05" value="0">
+          <span class="slider-value" id="noiseValue">0</span>
+        </div>
+        <button id="enhanceBtn">Tasvirni yaxshilash</button>
+        <button id="resetEnhancement">Asl holatga qaytarish</button>
+      </div>
+    </div>
+    
     <div><strong>Decoded:</strong></div>
     <div id="decodedText" class="small" style="word-break:break-word"></div>
     <div style="margin-top:8px;display:flex;gap:8px">
@@ -105,6 +143,18 @@
     const encodeImage = document.getElementById('encodeImage');
     const genFromCanvasBtn = document.getElementById('genFromCanvas');
 
+    // image enhancement controls
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    const contrastSlider = document.getElementById('contrastSlider');
+    const sharpnessSlider = document.getElementById('sharpnessSlider');
+    const noiseSlider = document.getElementById('noiseSlider');
+    const brightnessValue = document.getElementById('brightnessValue');
+    const contrastValue = document.getElementById('contrastValue');
+    const sharpnessValue = document.getElementById('sharpnessValue');
+    const noiseValue = document.getElementById('noiseValue');
+    const enhanceBtn = document.getElementById('enhanceBtn');
+    const resetEnhancementBtn = document.getElementById('resetEnhancement');
+
     let stream = null;
     let scanning = false;
     let scanLoopId = null;
@@ -112,6 +162,7 @@
     let torchOn = false;
     let useHardwareZoom = false;
     let lastDetected = null;
+    let originalImageData = null;
 
     // start on load
     window.addEventListener('load', ()=>{ startScanner(); });
@@ -280,6 +331,9 @@
           // apply simple brightness/contrast by drawing onto white then blending (we'll use CSS filter later)
           pctx.drawImage(cropCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
 
+          // Save original image data for enhancement
+          originalImageData = pctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+          
           // show result panel with brightened preview and decoded text
           qrPreview.src = previewCanvas.toDataURL('image/png');
           decodedText.textContent = code.data;
@@ -337,6 +391,169 @@
       } catch(e){
         alert('Bu URL emas: ' + txt);
       }
+    });
+
+    // Image enhancement functions
+    function applyImageEnhancement() {
+      if (!originalImageData) return;
+      
+      const brightness = parseFloat(brightnessSlider.value);
+      const contrast = parseFloat(contrastSlider.value);
+      const sharpness = parseFloat(sharpnessSlider.value);
+      const noise = parseFloat(noiseSlider.value);
+      
+      // Create a copy of the original image data
+      const enhancedData = new ImageData(
+        new Uint8ClampedArray(originalImageData.data),
+        originalImageData.width,
+        originalImageData.height
+      );
+      
+      const data = enhancedData.data;
+      
+      // Apply brightness and contrast
+      for (let i = 0; i < data.length; i += 4) {
+        // Brightness adjustment
+        data[i] = Math.min(255, Math.max(0, (data[i] - 128) * brightness + 128));
+        data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * brightness + 128));
+        data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * brightness + 128));
+        
+        // Contrast adjustment
+        data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128));
+        data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * contrast + 128));
+        data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * contrast + 128));
+      }
+      
+      // Apply sharpness if needed
+      if (sharpness > 0) {
+        applySharpness(enhancedData, sharpness);
+      }
+      
+      // Apply noise reduction if needed
+      if (noise > 0) {
+        applyNoiseReduction(enhancedData, noise);
+      }
+      
+      // Create a canvas to display the enhanced image
+      const canvas = document.createElement('canvas');
+      canvas.width = enhancedData.width;
+      canvas.height = enhancedData.height;
+      const ctx = canvas.getContext('2d');
+      ctx.putImageData(enhancedData, 0, 0);
+      
+      // Update the preview image
+      qrPreview.src = canvas.toDataURL('image/png');
+    }
+    
+    function applySharpness(imageData, strength) {
+      const data = imageData.data;
+      const width = imageData.width;
+      const height = imageData.height;
+      
+      // Create a copy for the sharpening kernel
+      const tempData = new Uint8ClampedArray(data);
+      
+      // Simple sharpening kernel
+      const kernel = [
+        0, -1, 0,
+        -1, 5, -1,
+        0, -1, 0
+      ];
+      
+      // Apply convolution
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          for (let c = 0; c < 3; c++) { // RGB channels only
+            let sum = 0;
+            for (let ky = -1; ky <= 1; ky++) {
+              for (let kx = -1; kx <= 1; kx++) {
+                const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                const kernelIdx = (ky + 1) * 3 + (kx + 1);
+                sum += tempData[idx] * kernel[kernelIdx];
+              }
+            }
+            const idx = (y * width + x) * 4 + c;
+            data[idx] = Math.min(255, Math.max(0, 
+              (1 - strength) * tempData[idx] + strength * sum
+            ));
+          }
+        }
+      }
+    }
+    
+    function applyNoiseReduction(imageData, strength) {
+      const data = imageData.data;
+      const width = imageData.width;
+      const height = imageData.height;
+      
+      // Simple median filter for noise reduction
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          for (let c = 0; c < 3; c++) { // RGB channels only
+            const values = [];
+            for (let ky = -1; ky <= 1; ky++) {
+              for (let kx = -1; kx <= 1; kx++) {
+                const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                values.push(data[idx]);
+              }
+            }
+            // Sort and take median
+            values.sort((a, b) => a - b);
+            const median = values[4]; // Middle of 9 values
+            
+            const idx = (y * width + x) * 4 + c;
+            // Blend with original based on strength
+            data[idx] = Math.round((1 - strength) * data[idx] + strength * median);
+          }
+        }
+      }
+    }
+    
+    // Update slider values display
+    brightnessSlider.addEventListener('input', () => {
+      brightnessValue.textContent = brightnessSlider.value;
+    });
+    
+    contrastSlider.addEventListener('input', () => {
+      contrastValue.textContent = contrastSlider.value;
+    });
+    
+    sharpnessSlider.addEventListener('input', () => {
+      sharpnessValue.textContent = sharpnessSlider.value;
+    });
+    
+    noiseSlider.addEventListener('input', () => {
+      noiseValue.textContent = noiseSlider.value;
+    });
+    
+    // Apply enhancement when button is clicked
+    enhanceBtn.addEventListener('click', applyImageEnhancement);
+    
+    // Reset enhancement
+    resetEnhancementBtn.addEventListener('click', () => {
+      if (!originalImageData) return;
+      
+      // Reset sliders to default values
+      brightnessSlider.value = 1.35;
+      contrastSlider.value = 1.15;
+      sharpnessSlider.value = 0;
+      noiseSlider.value = 0;
+      
+      // Update displayed values
+      brightnessValue.textContent = brightnessSlider.value;
+      contrastValue.textContent = contrastSlider.value;
+      sharpnessValue.textContent = sharpnessSlider.value;
+      noiseValue.textContent = noiseSlider.value;
+      
+      // Create a canvas to display the original image
+      const canvas = document.createElement('canvas');
+      canvas.width = originalImageData.width;
+      canvas.height = originalImageData.height;
+      const ctx = canvas.getContext('2d');
+      ctx.putImageData(originalImageData, 0, 0);
+      
+      // Update the preview image
+      qrPreview.src = canvas.toDataURL('image/png');
     });
 
     // manual snapshot -> QR generation (from current video frame)
