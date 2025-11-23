@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal Scanner - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
+    <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <style>
         * {
             margin: 0;
@@ -122,13 +122,13 @@
             border-radius: 16px;
             overflow: hidden;
             margin-bottom: 16px;
+            height: 300px;
         }
 
-        .scanner-video {
+        #scanner-canvas {
             width: 100%;
-            height: 300px;
+            height: 100%;
             object-fit: cover;
-            display: block;
         }
 
         .scanner-overlay {
@@ -568,33 +568,38 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script>
+        // Telegram WebApp sozlamalari
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            
+            // Apply theme
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f1f1f1');
+        }
+
+        // Asosiy React komponenti
         const { useState, useEffect, useRef } = React;
-        const { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } = ZXing;
 
         function App() {
             const [activeTab, setActiveTab] = useState('scan');
             const [scanHistory, setScanHistory] = useState([]);
             const [lastResult, setLastResult] = useState(null);
-            const [webApp, setWebApp] = useState(null);
-            const [user, setUser] = useState(null);
+            const [webApp, setWebApp] = useState(tg);
+            const [user, setUser] = useState(tg?.initDataUnsafe?.user);
 
             useEffect(() => {
-                const tg = window.Telegram?.WebApp;
-                if (tg) {
-                    setWebApp(tg);
-                    setUser(tg.initDataUnsafe?.user);
-                    tg.ready();
-                    tg.expand();
-                    
-                    // Apply theme
-                    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
-                    document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
-                    document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
-                    document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
-                    document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
-                    document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
-                    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f1f1f1');
+                // LocalStorage dan tarixni yuklash
+                const savedHistory = localStorage.getItem('scanHistory');
+                if (savedHistory) {
+                    setScanHistory(JSON.parse(savedHistory));
                 }
             }, []);
 
@@ -604,14 +609,17 @@
                     text: result.text,
                     format: result.format,
                     timestamp: new Date().toLocaleString('uz-UZ'),
-                    type: result.format.toLowerCase().includes('qr') ? 'qr' : 'barcode'
+                    type: result.format.includes('QR') ? 'qr' : 'barcode'
                 };
                 
-                setScanHistory(prev => [newItem, ...prev.slice(0, 49)]);
+                const newHistory = [newItem, ...scanHistory.slice(0, 49)];
+                setScanHistory(newHistory);
+                localStorage.setItem('scanHistory', JSON.stringify(newHistory));
             };
 
             const clearHistory = () => {
                 setScanHistory([]);
+                localStorage.removeItem('scanHistory');
             };
 
             const copyToClipboard = (text) => {
@@ -639,104 +647,89 @@
                 }
             };
 
-            return (
-                <div className="app">
-                    <Header user={user} />
-                    
-                    <main style={{ paddingBottom: '80px' }}>
-                        {activeTab === 'scan' && (
-                            <ScannerSection 
-                                onScanResult={(result) => {
-                                    setLastResult(result);
-                                    addToHistory(result);
-                                }}
-                                lastResult={lastResult}
-                                onCopy={copyToClipboard}
-                                onSendToBot={sendToBot}
-                                webApp={webApp}
-                            />
-                        )}
-                        
-                        {activeTab === 'history' && (
-                            <HistorySection 
-                                items={scanHistory}
-                                onClear={clearHistory}
-                                onItemClick={(item) => copyToClipboard(item.text)}
-                            />
-                        )}
-                    </main>
+            return React.createElement('div', { className: 'app' }, [
+                React.createElement(Header, { key: 'header', user }),
+                
+                React.createElement('main', { 
+                    key: 'main',
+                    style: { paddingBottom: '80px' } 
+                }, 
+                    activeTab === 'scan' ? 
+                        React.createElement(ScannerSection, {
+                            key: 'scanner',
+                            onScanResult: (result) => {
+                                setLastResult(result);
+                                addToHistory(result);
+                            },
+                            lastResult,
+                            onCopy: copyToClipboard,
+                            onSendToBot: sendToBot,
+                            webApp
+                        }) : 
+                        React.createElement(HistorySection, {
+                            key: 'history',
+                            items: scanHistory,
+                            onClear: clearHistory,
+                            onItemClick: (item) => copyToClipboard(item.text)
+                        })
+                ),
 
-                    <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-                </div>
-            );
+                React.createElement(Navigation, {
+                    key: 'nav',
+                    activeTab,
+                    onTabChange: setActiveTab
+                })
+            ]);
         }
 
         function Header({ user }) {
-            return (
-                <header className="header">
-                    <div className="container">
-                        <div className="header-content">
-                            <div className="logo">
-                                <div className="logo-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                                    </svg>
-                                </div>
-                                <div className="logo-text">
-                                    <h1>Universal Scanner</h1>
-                                    <p>QR va shtrix-kod skaneri</p>
-                                </div>
-                            </div>
-                            
-                            {user && (
-                                <div className="user-info">
-                                    <div className="user-details">
-                                        <div className="user-name">{user.first_name || 'Foydalanuvchi'}</div>
-                                        <div className="user-username">@{user.username || 'user'}</div>
-                                    </div>
-                                    {user.photo_url && (
-                                        <img src={user.photo_url} alt="Profile" className="user-avatar" />
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </header>
+            return React.createElement('header', { className: 'header' },
+                React.createElement('div', { className: 'container' },
+                    React.createElement('div', { className: 'header-content' },
+                        React.createElement('div', { className: 'logo' },
+                            React.createElement('div', { className: 'logo-icon' },
+                                React.createElement('svg', { 
+                                    width: "20", 
+                                    height: "20", 
+                                    viewBox: "0 0 24 24", 
+                                    fill: "none", 
+                                    stroke: "currentColor", 
+                                    strokeWidth: "2" 
+                                },
+                                    React.createElement('path', { 
+                                        d: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                                    })
+                                )
+                            ),
+                            React.createElement('div', { className: 'logo-text' },
+                                React.createElement('h1', null, 'Universal Scanner'),
+                                React.createElement('p', null, 'QR va shtrix-kod skaneri')
+                            )
+                        ),
+                        
+                        user && React.createElement('div', { className: 'user-info' },
+                            React.createElement('div', { className: 'user-details' },
+                                React.createElement('div', { className: 'user-name' }, user.first_name || 'Foydalanuvchi'),
+                                React.createElement('div', { className: 'user-username' }, '@' + (user.username || 'user'))
+                            ),
+                            user.photo_url && React.createElement('img', { 
+                                src: user.photo_url, 
+                                alt: "Profile", 
+                                className: "user-avatar" 
+                            })
+                        )
+                    )
+                )
             );
         }
 
         function ScannerSection({ onScanResult, lastResult, onCopy, onSendToBot, webApp }) {
-            const videoRef = useRef(null);
-            const readerRef = useRef(null);
             const [scanning, setScanning] = useState(false);
             const [error, setError] = useState(null);
-            const [torchOn, setTorchOn] = useState(false);
-            const [torchAvailable, setTorchAvailable] = useState(false);
-
-            useEffect(() => {
-                // Initialize scanner
-                const formats = [
-                    BarcodeFormat.QR_CODE,
-                    BarcodeFormat.DATA_MATRIX,
-                    BarcodeFormat.AZTEC,
-                    BarcodeFormat.PDF_417,
-                    BarcodeFormat.CODE_128,
-                    BarcodeFormat.CODE_39,
-                    BarcodeFormat.EAN_13,
-                    BarcodeFormat.EAN_8,
-                    BarcodeFormat.UPC_A,
-                    BarcodeFormat.UPC_E,
-                ].filter(Boolean);
-
-                const hints = new Map();
-                hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-
-                readerRef.current = new BrowserMultiFormatReader(hints);
-
-                return () => {
-                    stopScanning();
-                };
-            }, []);
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
+            const streamRef = useRef(null);
+            const scanIntervalRef = useRef(null);
 
             const startScanning = async () => {
                 setError(null);
@@ -750,43 +743,21 @@
                         }
                     });
 
-                    videoRef.current.srcObject = stream;
+                    streamRef.current = stream;
+                    const video = videoRef.current;
+                    video.srcObject = stream;
                     
-                    const track = stream.getVideoTracks()[0];
-                    const capabilities = track.getCapabilities?.() || {};
-                    setTorchAvailable(!!capabilities.torch);
-
                     setScanning(true);
 
-                    const decodeLoop = async () => {
-                        if (!videoRef.current || videoRef.current.readyState < 2) {
-                            requestAnimationFrame(decodeLoop);
-                            return;
-                        }
-
-                        try {
-                            const result = await readerRef.current.decodeFromVideoElement(videoRef.current);
-                            if (result) {
-                                onScanResult({
-                                    text: result.getText(),
-                                    format: result.getBarcodeFormat()
-                                });
-                                
-                                // Haptic feedback
-                                if (webApp) {
-                                    webApp.HapticFeedback.impactOccurred('medium');
-                                }
-                            }
-                        } catch (err) {
-                            // Ignore decoding errors
-                        }
-
-                        if (scanning) {
-                            requestAnimationFrame(decodeLoop);
-                        }
+                    // Video yuklanganidan keyin skanerlashni boshlash
+                    video.onloadeddata = () => {
+                        // QR va barcode skanerlash uchun interval
+                        scanIntervalRef.current = setInterval(() => {
+                            if (!scanning) return;
+                            scanForCodes(video);
+                        }, 500); // Har 500ms da skanerlash
                     };
 
-                    decodeLoop();
                 } catch (err) {
                     setError(`Kamerani ochishda xato: ${err.message}`);
                     setScanning(false);
@@ -795,250 +766,477 @@
 
             const stopScanning = () => {
                 setScanning(false);
-                if (videoRef.current?.srcObject) {
-                    videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-                    videoRef.current.srcObject = null;
+                if (scanIntervalRef.current) {
+                    clearInterval(scanIntervalRef.current);
+                    scanIntervalRef.current = null;
                 }
-                setTorchOn(false);
-            };
-
-            const toggleTorch = async () => {
-                try {
-                    const track = videoRef.current?.srcObject?.getVideoTracks()[0];
-                    if (!track) return;
-
-                    await track.applyConstraints({
-                        advanced: [{ torch: !torchOn }]
-                    });
-                    setTorchOn(!torchOn);
-                } catch (err) {
-                    console.error('Torch toggle error:', err);
+                if (streamRef.current) {
+                    streamRef.current.getTracks().forEach(track => track.stop());
+                    streamRef.current = null;
                 }
             };
 
-            return (
-                <div className="scanner-section">
-                    <div className="container">
-                        {/* Scanner View */}
-                        <div className="scanner-container">
-                            <video 
-                                ref={videoRef}
-                                autoPlay 
-                                playsInline 
-                                muted 
-                                className="scanner-video"
-                            />
+            // QR va barcode kodlarni skanerlash funksiyasi
+            const scanForCodes = (video) => {
+                const canvas = canvasRef.current;
+                const context = canvas.getContext('2d');
+                
+                // Video o'lchamlarini olish
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                
+                if (videoWidth > 0 && videoHeight > 0) {
+                    // Canvas o'lchamlarini sozlash
+                    canvas.width = videoWidth;
+                    canvas.height = videoHeight;
+                    
+                    // Videodan rasm chizish
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // QR kodni skanerlash
+                    try {
+                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                        const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+                        
+                        if (qrCode) {
+                            onScanResult({
+                                text: qrCode.data,
+                                format: 'QR_CODE'
+                            });
                             
-                            {scanning && (
-                                <div className="scanner-overlay">
-                                    <div className="scanner-frame">
-                                        <div className="scanner-corner corner-tl"></div>
-                                        <div className="scanner-corner corner-tr"></div>
-                                        <div className="scanner-corner corner-bl"></div>
-                                        <div className="scanner-corner corner-br"></div>
-                                        <div className="laser-line"></div>
-                                    </div>
-                                </div>
-                            )}
+                            if (webApp) {
+                                webApp.HapticFeedback.impactOccurred('medium');
+                            }
+                            stopScanning();
+                            return;
+                        }
+                    } catch (e) {
+                        console.log('QR kod skanerlash xatosi:', e);
+                    }
 
-                            {!scanning && (
-                                <div className="scanner-status">
-                                    <div>
-                                        <svg className="status-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                        <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Kamera tayyor</p>
-                                        <p style={{ fontSize: '14px', opacity: '0.8' }}>Skanerlashni boshlash uchun tugmani bosing</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Error Display */}
-                        {error && (
-                            <div className="error-message">
-                                <svg className="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                {error}
-                            </div>
-                        )}
-
-                        {/* Control Buttons */}
-                        <div className="controls">
-                            {!scanning ? (
-                                <button onClick={startScanning} className="btn btn-primary">
-                                    <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                                    </svg>
-                                    Skanerlashni Boshlash
-                                </button>
-                            ) : (
-                                <button onClick={stopScanning} className="btn btn-danger">
-                                    <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                                    </svg>
-                                    To'xtatish
-                                </button>
-                            )}
-
-                            {torchAvailable && scanning && (
-                                <button onClick={toggleTorch} className={`btn ${torchOn ? 'btn-warning' : 'btn-secondary'}`}>
-                                    <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                                    </svg>
-                                    {torchOn ? 'O\'chirish' : 'Chiroq'}
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Last Result */}
-                        {lastResult && (
-                            <div className="result-section">
-                                <div className="result-header">
-                                    <div className="result-title">
-                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        Kod Topildi!
-                                    </div>
-                                    <span className="result-format">{lastResult.format}</span>
-                                </div>
+                    // Barcode skanerlash
+                    try {
+                        Quagga.decodeSingle({
+                            decoder: {
+                                readers: ['code_128_reader', 'ean_reader', 'ean_8_reader', 'code_39_reader', 'upc_reader', 'codabar_reader']
+                            },
+                            locate: true,
+                            src: canvas.toDataURL(),
+                        }, function(result) {
+                            if (result && result.codeResult) {
+                                onScanResult({
+                                    text: result.codeResult.code,
+                                    format: result.codeResult.format
+                                });
                                 
-                                <div className="result-content">
-                                    <pre className="result-text">{lastResult.text}</pre>
-                                </div>
+                                if (webApp) {
+                                    webApp.HapticFeedback.impactOccurred('medium');
+                                }
+                                stopScanning();
+                            }
+                        });
+                    } catch (e) {
+                        console.log('Barcode skanerlash xatosi:', e);
+                    }
+                }
+            };
 
-                                <div className="result-actions">
-                                    <button onClick={() => onCopy(lastResult.text)} className="btn btn-primary">
-                                        Nusxalash
-                                    </button>
-                                    <button onClick={() => onSendToBot(lastResult)} className="btn btn-success">
-                                        Botga Yuborish
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+            useEffect(() => {
+                // Komponent unmount bo'lganda tozalash
+                return () => {
+                    if (scanIntervalRef.current) {
+                        clearInterval(scanIntervalRef.current);
+                    }
+                    if (streamRef.current) {
+                        streamRef.current.getTracks().forEach(track => track.stop());
+                    }
+                };
+            }, []);
 
-                        {/* Instructions */}
-                        <div className="instructions">
-                            <div className="instructions-header">
-                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                Qanday ishlatish
-                            </div>
-                            <ul className="instructions-list">
-                                <li>• QR kod yoki shtrix-kodni ramkaga joylashtiring</li>
-                                <li>• Yorug'lik yetarli bo'lishiga ishonch hosil qiling</li>
-                                <li>• Kod avtomatik ravishda skanerlanadi</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+            return React.createElement('div', { className: 'scanner-section' },
+                React.createElement('div', { className: 'container' },
+                    // Scanner View
+                    React.createElement('div', { className: 'scanner-container' },
+                        React.createElement('video', {
+                            ref: videoRef,
+                            autoPlay: true,
+                            playsInline: true,
+                            muted: true,
+                            style: {
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                display: scanning ? 'block' : 'none'
+                            }
+                        }),
+                        React.createElement('canvas', {
+                            ref: canvasRef,
+                            style: { display: 'none' }
+                        }),
+                        
+                        scanning && React.createElement('div', { className: 'scanner-overlay' },
+                            React.createElement('div', { className: 'scanner-frame' },
+                                React.createElement('div', { className: 'scanner-corner corner-tl' }),
+                                React.createElement('div', { className: 'scanner-corner corner-tr' }),
+                                React.createElement('div', { className: 'scanner-corner corner-bl' }),
+                                React.createElement('div', { className: 'scanner-corner corner-br' }),
+                                React.createElement('div', { className: 'laser-line' })
+                            )
+                        ),
+
+                        !scanning && React.createElement('div', { className: 'scanner-status' },
+                            React.createElement('div', null,
+                                React.createElement('svg', {
+                                    className: 'status-icon',
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                }, [
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                                    }),
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                                    })
+                                ]),
+                                React.createElement('p', { 
+                                    style: { fontSize: '18px', fontWeight: '600', marginBottom: '4px' } 
+                                }, 'Kamera tayyor'),
+                                React.createElement('p', { 
+                                    style: { fontSize: '14px', opacity: '0.8' } 
+                                }, 'Skanerlashni boshlash uchun tugmani bosing')
+                            )
+                        )
+                    ),
+
+                    // Error Display
+                    error && React.createElement('div', { className: 'error-message' },
+                        React.createElement('svg', {
+                            className: 'error-icon',
+                            fill: "none",
+                            stroke: "currentColor",
+                            viewBox: "0 0 24 24"
+                        },
+                            React.createElement('path', {
+                                strokeLinecap: "round",
+                                strokeLinejoin: "round",
+                                strokeWidth: "2",
+                                d: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            })
+                        ),
+                        error
+                    ),
+
+                    // Control Buttons
+                    React.createElement('div', { className: 'controls' },
+                        !scanning ? 
+                            React.createElement('button', {
+                                onClick: startScanning,
+                                className: 'btn btn-primary'
+                            }, [
+                                React.createElement('svg', {
+                                    className: 'btn-icon',
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                },
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                                    })
+                                ),
+                                'Skanerlashni Boshlash'
+                            ]) :
+                            React.createElement('button', {
+                                onClick: stopScanning,
+                                className: 'btn btn-danger'
+                            }, [
+                                React.createElement('svg', {
+                                    className: 'btn-icon',
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                }, [
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    }),
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+                                    })
+                                ]),
+                                'To\'xtatish'
+                            ])
+                    ),
+
+                    // Last Result
+                    lastResult && React.createElement('div', { className: 'result-section' },
+                        React.createElement('div', { className: 'result-header' },
+                            React.createElement('div', { className: 'result-title' },
+                                React.createElement('svg', {
+                                    width: "20",
+                                    height: "20",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                },
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    })
+                                ),
+                                'Kod Topildi!'
+                            ),
+                            React.createElement('span', { className: 'result-format' }, lastResult.format)
+                        ),
+                        
+                        React.createElement('div', { className: 'result-content' },
+                            React.createElement('pre', { className: 'result-text' }, lastResult.text)
+                        ),
+
+                        React.createElement('div', { className: 'result-actions' },
+                            React.createElement('button', {
+                                onClick: () => onCopy(lastResult.text),
+                                className: 'btn btn-primary'
+                            }, 'Nusxalash'),
+                            React.createElement('button', {
+                                onClick: () => onSendToBot(lastResult),
+                                className: 'btn btn-success'
+                            }, 'Botga Yuborish'),
+                            React.createElement('button', {
+                                onClick: () => {
+                                    setLastResult(null);
+                                    startScanning();
+                                },
+                                className: 'btn btn-secondary'
+                            }, 'Yana Skanerlash')
+                        )
+                    ),
+
+                    // Instructions
+                    React.createElement('div', { className: 'instructions' },
+                        React.createElement('div', { className: 'instructions-header' },
+                            React.createElement('svg', {
+                                width: "18",
+                                height: "18",
+                                fill: "none",
+                                stroke: "currentColor",
+                                viewBox: "0 0 24 24"
+                            },
+                                React.createElement('path', {
+                                    strokeLinecap: "round",
+                                    strokeLinejoin: "round",
+                                    strokeWidth: "2",
+                                    d: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                })
+                            ),
+                            'Qanday ishlatish'
+                        ),
+                        React.createElement('ul', { className: 'instructions-list' }, [
+                            React.createElement('li', { key: 1 }, '• QR kod yoki shtrix-kodni ramkaga joylashtiring'),
+                            React.createElement('li', { key: 2 }, '• Yorug\'lik yetarli bo\'lishiga ishonch hosil qiling'),
+                            React.createElement('li', { key: 3 }, '• Kod avtomatik ravishda skanerlanadi')
+                        ])
+                    )
+                )
             );
         }
 
         function HistorySection({ items, onClear, onItemClick }) {
             if (items.length === 0) {
-                return (
-                    <div className="history-section">
-                        <div className="container">
-                            <div className="empty-state">
-                                <svg className="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <h3 style={{ marginBottom: '8px', color: 'var(--tg-theme-text-color)' }}>Hali skanerlar mavjud emas</h3>
-                                <p style={{ color: 'var(--tg-theme-hint-color)' }}>Skanerlash natijalari shu yerda ko'rinadi</p>
-                            </div>
-                        </div>
-                    </div>
+                return React.createElement('div', { className: 'history-section' },
+                    React.createElement('div', { className: 'container' },
+                        React.createElement('div', { className: 'empty-state' },
+                            React.createElement('svg', {
+                                className: 'empty-icon',
+                                fill: "none",
+                                stroke: "currentColor",
+                                viewBox: "0 0 24 24"
+                            },
+                                React.createElement('path', {
+                                    strokeLinecap: "round",
+                                    strokeLinejoin: "round",
+                                    strokeWidth: "2",
+                                    d: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                })
+                            ),
+                            React.createElement('h3', { 
+                                style: { marginBottom: '8px', color: 'var(--tg-theme-text-color)' } 
+                            }, 'Hali skanerlar mavjud emas'),
+                            React.createElement('p', { 
+                                style: { color: 'var(--tg-theme-hint-color)' } 
+                            }, 'Skanerlash natijalari shu yerda ko\'rinadi')
+                        )
+                    )
                 );
             }
 
-            return (
-                <div className="history-section">
-                    <div className="container">
-                        <div className="history-header">
-                            <h2 className="history-title">Skanerlar Tarixi</h2>
-                            <button onClick={onClear} className="clear-btn">
-                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                Tozalash
-                            </button>
-                        </div>
+            return React.createElement('div', { className: 'history-section' },
+                React.createElement('div', { className: 'container' },
+                    React.createElement('div', { className: 'history-header' },
+                        React.createElement('h2', { className: 'history-title' }, 'Skanerlar Tarixi'),
+                        React.createElement('button', { onClick: onClear, className: 'clear-btn' }, [
+                            React.createElement('svg', {
+                                width: "16",
+                                height: "16",
+                                fill: "none",
+                                stroke: "currentColor",
+                                viewBox: "0 0 24 24"
+                            },
+                                React.createElement('path', {
+                                    strokeLinecap: "round",
+                                    strokeLinejoin: "round",
+                                    strokeWidth: "2",
+                                    d: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                })
+                            ),
+                            'Tozalash'
+                        ])
+                    ),
 
-                        <div className="history-list">
-                            {items.map((item) => (
-                                <div key={item.id} className="history-item" onClick={() => onItemClick(item)}>
-                                    <div className="history-item-header">
-                                        <div className="history-item-type">
-                                            <div className={`type-icon ${item.type}`}>
-                                                {item.type === 'qr' ? (
-                                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                                                    </svg>
-                                                ) : (
-                                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                                                    </svg>
-                                                )}
-                                            </div>
-                                            <div className="history-item-info">
-                                                <h4>{item.format}</h4>
-                                                <p>{item.timestamp}</p>
-                                            </div>
-                                        </div>
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-                                        </svg>
-                                    </div>
-                                    
-                                    <div className="history-item-content">
-                                        <div className="history-item-text">{item.text}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    React.createElement('div', { className: 'history-list' },
+                        items.map((item) => 
+                            React.createElement('div', {
+                                key: item.id,
+                                className: 'history-item',
+                                onClick: () => onItemClick(item)
+                            }, [
+                                React.createElement('div', { className: 'history-item-header' }, [
+                                    React.createElement('div', { className: 'history-item-type' }, [
+                                        React.createElement('div', { className: `type-icon ${item.type}` },
+                                            item.type === 'qr' ? 
+                                                React.createElement('svg', {
+                                                    width: "16",
+                                                    height: "16",
+                                                    fill: "none",
+                                                    stroke: "currentColor",
+                                                    viewBox: "0 0 24 24"
+                                                },
+                                                    React.createElement('path', {
+                                                        strokeLinecap: "round",
+                                                        strokeLinejoin: "round",
+                                                        strokeWidth: "2",
+                                                        d: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                                                    })
+                                                ) :
+                                                React.createElement('svg', {
+                                                    width: "16",
+                                                    height: "16",
+                                                    fill: "none",
+                                                    stroke: "currentColor",
+                                                    viewBox: "0 0 24 24"
+                                                },
+                                                    React.createElement('path', {
+                                                        strokeLinecap: "round",
+                                                        strokeLinejoin: "round",
+                                                        strokeWidth: "2",
+                                                        d: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                                    })
+                                                )
+                                        ),
+                                        React.createElement('div', { className: 'history-item-info' }, [
+                                            React.createElement('h4', null, item.format),
+                                            React.createElement('p', null, item.timestamp)
+                                        ])
+                                    ]),
+                                    React.createElement('svg', {
+                                        width: "16",
+                                        height: "16",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: "2",
+                                            d: "M9 5l7 7-7 7"
+                                        })
+                                    )
+                                ]),
+                                
+                                React.createElement('div', { className: 'history-item-content' },
+                                    React.createElement('div', { className: 'history-item-text' }, item.text)
+                                )
+                            ])
+                        )
+                    ),
 
-                        <div style={{ textAlign: 'center', marginTop: '16px', color: 'var(--tg-theme-hint-color)', fontSize: '14px' }}>
-                            {items.length} ta skaner
-                        </div>
-                    </div>
-                </div>
+                    React.createElement('div', { 
+                        style: { 
+                            textAlign: 'center', 
+                            marginTop: '16px', 
+                            color: 'var(--tg-theme-hint-color)', 
+                            fontSize: '14px' 
+                        } 
+                    }, `${items.length} ta skaner`)
+                )
             );
         }
 
         function Navigation({ activeTab, onTabChange }) {
-            return (
-                <nav className="navigation">
-                    <button 
-                        className={`nav-item ${activeTab === 'scan' ? 'active' : ''}`}
-                        onClick={() => onTabChange('scan')}
-                    >
-                        <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                        </svg>
-                        <span className="nav-label">Skaner</span>
-                    </button>
-                    
-                    <button 
-                        className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
-                        onClick={() => onTabChange('history')}
-                    >
-                        <svg className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span className="nav-label">Tarix</span>
-                    </button>
-                </nav>
-            );
+            return React.createElement('nav', { className: 'navigation' }, [
+                React.createElement('button', {
+                    key: 'scan',
+                    className: `nav-item ${activeTab === 'scan' ? 'active' : ''}`,
+                    onClick: () => onTabChange('scan')
+                }, [
+                    React.createElement('svg', {
+                        className: 'nav-icon',
+                        fill: "none",
+                        stroke: "currentColor",
+                        viewBox: "0 0 24 24"
+                    },
+                        React.createElement('path', {
+                            strokeLinecap: "round",
+                            strokeLinejoin: "round",
+                            strokeWidth: "2",
+                            d: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                        })
+                    ),
+                    React.createElement('span', { className: 'nav-label' }, 'Skaner')
+                ]),
+                
+                React.createElement('button', {
+                    key: 'history',
+                    className: `nav-item ${activeTab === 'history' ? 'active' : ''}`,
+                    onClick: () => onTabChange('history')
+                }, [
+                    React.createElement('svg', {
+                        className: 'nav-icon',
+                        fill: "none",
+                        stroke: "currentColor",
+                        viewBox: "0 0 24 24"
+                    },
+                        React.createElement('path', {
+                            strokeLinecap: "round",
+                            strokeLinejoin: "round",
+                            strokeWidth: "2",
+                            d: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        })
+                    ),
+                    React.createElement('span', { className: 'nav-label' }, 'Tarix')
+                ])
+            ]);
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        // React ilovasini ishga tushirish
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 </body>
 </html>
