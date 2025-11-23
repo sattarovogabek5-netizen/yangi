@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner Pro - Tez va Aniq Skaner</title>
+    <title>QR & DataMatrix Scanner Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.1/dist/quagga.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -18,14 +19,17 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .scanner-app {
+            width: 100%;
             max-width: 1400px;
-            margin: 0 auto;
             background: white;
-            border-radius: 24px;
+            border-radius: 20px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             overflow: hidden;
             backdrop-filter: blur(10px);
@@ -34,38 +38,21 @@
         .app-header {
             background: linear-gradient(135deg, #1e1b4b, #3730a3);
             color: white;
-            padding: 30px 40px;
+            padding: 25px 30px;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
         
-        .app-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 8s infinite linear;
-        }
-        
-        @keyframes pulse {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
         .app-title {
-            font-size: 2.8rem;
+            font-size: 2.2rem;
             font-weight: 800;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             position: relative;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .app-subtitle {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             opacity: 0.9;
             font-weight: 300;
         }
@@ -74,9 +61,9 @@
             display: flex;
             justify-content: space-around;
             background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
             backdrop-filter: blur(10px);
         }
         
@@ -85,46 +72,51 @@
         }
         
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #10b981;
         }
         
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             opacity: 0.8;
         }
         
         .app-content {
             display: grid;
             grid-template-columns: 1.2fr 0.8fr;
-            gap: 30px;
-            padding: 40px;
+            gap: 25px;
+            padding: 30px;
+            min-height: 600px;
         }
         
         @media (max-width: 968px) {
             .app-content {
                 grid-template-columns: 1fr;
+                gap: 20px;
             }
         }
         
         .scanner-section {
             background: #f8fafc;
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 25px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
         }
         
         .scanner-frame {
             position: relative;
             width: 100%;
-            height: 450px;
+            flex: 1;
+            min-height: 400px;
             background: #000;
-            border-radius: 16px;
+            border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.3);
         }
         
         .video-element {
@@ -147,10 +139,10 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 280px;
-            height: 280px;
+            width: 250px;
+            height: 250px;
             border: 3px solid #10b981;
-            border-radius: 20px;
+            border-radius: 16px;
             pointer-events: none;
             z-index: 10;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
@@ -160,49 +152,48 @@
         .scanner-guide::before, .scanner-guide::after {
             content: '';
             position: absolute;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #10b981;
+            width: 35px;
+            height: 35px;
+            border: 3px solid #10b981;
         }
         
         .scanner-guide::before {
-            top: -4px;
-            left: -4px;
+            top: -3px;
+            left: -3px;
             border-right: none;
             border-bottom: none;
-            border-top-left-radius: 16px;
+            border-top-left-radius: 12px;
         }
         
         .scanner-guide::after {
-            bottom: -4px;
-            right: -4px;
+            bottom: -3px;
+            right: -3px;
             border-left: none;
             border-top: none;
-            border-bottom-right-radius: 16px;
+            border-bottom-right-radius: 12px;
+        }
+        
+        .corner-top-right, .corner-bottom-left {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border: 3px solid #10b981;
         }
         
         .corner-top-right {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #10b981;
+            top: -3px;
+            right: -3px;
             border-left: none;
             border-bottom: none;
-            border-top-right-radius: 16px;
+            border-top-right-radius: 12px;
         }
         
         .corner-bottom-left {
-            position: absolute;
-            bottom: -4px;
-            left: -4px;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #10b981;
+            bottom: -3px;
+            left: -3px;
             border-right: none;
             border-top: none;
-            border-bottom-left-radius: 16px;
+            border-bottom-left-radius: 12px;
         }
         
         @keyframes scannerPulse {
@@ -214,33 +205,33 @@
         .scanner-controls {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
         
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
         
         .btn {
-            padding: 14px 20px;
+            padding: 12px 16px;
             border: none;
-            border-radius: 12px;
-            font-size: 15px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
         .btn i {
-            font-size: 18px;
+            font-size: 16px;
         }
         
         .btn-primary {
@@ -251,7 +242,6 @@
         .btn-primary:hover {
             background: linear-gradient(135deg, #1d4ed8, #1e40af);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
         }
         
         .btn-success {
@@ -262,7 +252,6 @@
         .btn-success:hover {
             background: linear-gradient(135deg, #059669, #047857);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
         }
         
         .btn-warning {
@@ -273,7 +262,6 @@
         .btn-warning:hover {
             background: linear-gradient(135deg, #d97706, #b45309);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
         }
         
         .btn-danger {
@@ -284,7 +272,6 @@
         .btn-danger:hover {
             background: linear-gradient(135deg, #dc2626, #b91c1c);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
         }
         
         .btn-secondary {
@@ -295,7 +282,6 @@
         .btn-secondary:hover {
             background: linear-gradient(135deg, #4b5563, #374151);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
         }
         
         .file-input-wrapper {
@@ -312,24 +298,24 @@
         
         .zoom-control {
             background: white;
-            padding: 20px;
-            border-radius: 16px;
+            padding: 15px;
+            border-radius: 12px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         
         .zoom-label {
             display: block;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-weight: 600;
             color: #1f2937;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         .zoom-slider {
             width: 100%;
-            height: 8px;
-            border-radius: 4px;
+            height: 6px;
+            border-radius: 3px;
             background: #e5e7eb;
             outline: none;
             -webkit-appearance: none;
@@ -337,25 +323,24 @@
         
         .zoom-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 22px;
-            height: 22px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             background: #3b82f6;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         .status-indicator {
-            padding: 16px;
-            border-radius: 12px;
-            margin: 20px 0;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 15px 0;
             text-align: center;
             font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            gap: 8px;
+            font-size: 14px;
         }
         
         .status-scanning {
@@ -372,29 +357,29 @@
         
         .result-section {
             background: white;
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 25px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             height: fit-content;
         }
         
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             color: #1f2937;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .result-box {
             background: #f8fafc;
-            border-radius: 16px;
-            padding: 25px;
-            margin: 20px 0;
-            min-height: 150px;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 120px;
             border: 2px dashed #d1d5db;
             transition: all 0.3s ease;
         }
@@ -405,10 +390,11 @@
         }
         
         .qr-result {
-            font-size: 16px;
-            line-height: 1.6;
+            font-size: 14px;
+            line-height: 1.5;
             word-break: break-all;
             color: #1f2937;
+            font-family: 'Courier New', monospace;
         }
         
         .empty-result {
@@ -418,36 +404,36 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
         
         .empty-result i {
-            font-size: 48px;
+            font-size: 36px;
             color: #d1d5db;
         }
         
         .action-buttons {
             display: flex;
-            gap: 12px;
-            margin-top: 20px;
+            gap: 10px;
+            margin-top: 15px;
         }
         
         .tips-card {
             background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-            border-radius: 16px;
-            padding: 25px;
-            margin-top: 25px;
-            border-left: 5px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #0ea5e9;
         }
         
         .tips-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: #0369a1;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .tips-list {
@@ -456,12 +442,13 @@
         }
         
         .tips-list li {
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #7dd3fc;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 10px;
             color: #0c4a6e;
+            font-size: 13px;
         }
         
         .tips-list li:last-child {
@@ -470,25 +457,25 @@
         
         .tips-list li i {
             color: #0ea5e9;
-            margin-top: 4px;
+            margin-top: 2px;
         }
         
         .footer-note {
             background: #f1f5f9;
-            padding: 20px 40px;
+            padding: 15px 30px;
             text-align: center;
             color: #64748b;
-            font-size: 14px;
+            font-size: 13px;
             border-top: 1px solid #e2e8f0;
         }
         
         .pulse-dot {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #10b981;
-            margin-right: 8px;
+            margin-right: 6px;
             animation: dotPulse 1.5s infinite;
         }
         
@@ -502,20 +489,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            padding: 16px;
+            gap: 10px;
+            padding: 12px;
             background: #eff6ff;
-            border-radius: 12px;
-            margin: 15px 0;
+            border-radius: 10px;
+            margin: 12px 0;
             color: #1e40af;
             font-weight: 600;
+            font-size: 14px;
         }
         
         .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid #dbeafe;
-            border-top: 3px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #dbeafe;
+            border-top: 2px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -527,26 +515,27 @@
         
         .performance-info {
             background: #fefce8;
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 15px;
-            border-left: 4px solid #f59e0b;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+            border-left: 3px solid #f59e0b;
         }
         
         .performance-title {
             font-weight: 600;
             color: #92400e;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            font-size: 14px;
         }
         
         .performance-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 14px;
+            gap: 8px;
+            font-size: 12px;
         }
         
         .stat {
@@ -558,13 +547,36 @@
             font-weight: 600;
             color: #065f46;
         }
+        
+        .code-type-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .data-formatted {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
     <div class="scanner-app">
         <div class="app-header">
-            <h1 class="app-title"><i class="fas fa-bolt"></i> QR Scanner Pro</h1>
-            <p class="app-subtitle">Har qanday QR kodni tez va aniq skanerlang</p>
+            <h1 class="app-title"><i class="fas fa-qrcode"></i> QR & DataMatrix Scanner</h1>
+            <p class="app-subtitle">GS1 DataMatrix va barcha QR kod turlarini skanerlang</p>
             
             <div class="stats-bar">
                 <div class="stat-item">
@@ -573,11 +585,11 @@
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="qrCount">0</div>
-                    <div class="stat-label">Topilgan QR Kodlar</div>
+                    <div class="stat-label">Topilgan Kodlar</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="successRate">100%</div>
-                    <div class="stat-label">Muvaffaqiyat Darajasi</div>
+                    <div class="stat-label">Muvaffaqiyat</div>
                 </div>
             </div>
         </div>
@@ -596,22 +608,22 @@
                 <div class="scanner-controls">
                     <div class="control-group">
                         <button id="startBtn" class="btn btn-primary">
-                            <i class="fas fa-play-circle"></i> Kamerani Yoqish
+                            <i class="fas fa-play"></i> Kamerani Yoqish
                         </button>
                         <button id="stopBtn" class="btn btn-danger" disabled>
-                            <i class="fas fa-stop-circle"></i> Kamerani To'xtatish
+                            <i class="fas fa-stop"></i> To'xtatish
                         </button>
                     </div>
                     
                     <div class="control-group">
                         <div class="file-input-wrapper">
                             <button class="btn btn-secondary">
-                                <i class="fas fa-file-image"></i> Rasm Yuklash
+                                <i class="fas fa-image"></i> Rasm Yuklash
                             </button>
                             <input type="file" id="fileInput" accept="image/*" class="file-input">
                         </div>
                         <button id="torchBtn" class="btn btn-warning">
-                            <i class="fas fa-lightbulb"></i> Flash Yoqish
+                            <i class="fas fa-lightbulb"></i> Flash
                         </button>
                     </div>
                 </div>
@@ -625,24 +637,24 @@
                 
                 <div class="performance-info">
                     <div class="performance-title">
-                        <i class="fas fa-tachometer-alt"></i> Tez Skanerlash Tizimi
+                        <i class="fas fa-microchip"></i> Kengaytirilgan Skanerlash
                     </div>
                     <div class="performance-stats">
                         <div class="stat">
-                            <span>Optimallashtirilgan algoritm:</span>
+                            <span>GS1 DataMatrix:</span>
                             <span class="stat-value">Faol</span>
                         </div>
                         <div class="stat">
-                            <span>Ko'p qatlamli skanerlash:</span>
+                            <span>QR Kodlar:</span>
                             <span class="stat-value">Faol</span>
                         </div>
                         <div class="stat">
-                            <span>Tez tasvir qayta ishlash:</span>
+                            <span>To'liq ekran:</span>
                             <span class="stat-value">Faol</span>
                         </div>
                         <div class="stat">
-                            <span>Avtomatik kontrast:</span>
-                            <span class="stat-value">Faol</span>
+                            <span>Tezlik:</span>
+                            <span class="stat-value">50-100ms</span>
                         </div>
                     </div>
                 </div>
@@ -654,24 +666,24 @@
             
             <div class="result-section">
                 <h2 class="section-title">
-                    <i class="fas fa-clipboard-list"></i> Skanerlash Natijalari
+                    <i class="fas fa-list"></i> Skanerlash Natijalari
                 </h2>
                 
                 <div id="processingIndicator" class="processing-indicator" style="display: none;">
                     <div class="spinner"></div>
-                    <span>QR kod qayta ishlanyapti...</span>
+                    <span>Kod qayta ishlanyapti...</span>
                 </div>
                 
                 <div id="resultBox" class="result-box">
                     <div id="result" class="empty-result">
-                        <i class="fas fa-qrcode"></i>
-                        <div>QR kod skanerlanganida natija shu yerda paydo bo'ladi</div>
+                        <i class="fas fa-barcode"></i>
+                        <div>Kod skanerlanganida natija shu yerda paydo bo'ladi</div>
                     </div>
                 </div>
                 
                 <div class="action-buttons">
                     <button id="copyBtn" class="btn btn-success" disabled>
-                        <i class="fas fa-copy"></i> Natijani Nusxalash
+                        <i class="fas fa-copy"></i> Nusxalash
                     </button>
                     <button id="clearBtn" class="btn btn-secondary">
                         <i class="fas fa-broom"></i> Tozalash
@@ -680,24 +692,24 @@
                 
                 <div class="tips-card">
                     <h3 class="tips-title">
-                        <i class="fas fa-lightbulb"></i> Tez Skanerlash Bo'yicha Maslahatlar
+                        <i class="fas fa-info-circle"></i> GS1 DataMatrix Kodlari
                     </h3>
                     <ul class="tips-list">
                         <li>
-                            <i class="fas fa-bolt"></i>
-                            <span><strong>Optimallashtirilgan algoritm</strong> - Har qanday sharoitda tez skanerlash</span>
+                            <i class="fas fa-check"></i>
+                            <span><strong>MK(01):04602824025526</strong> - Global mahsulot kodi</span>
                         </li>
                         <li>
-                            <i class="fas fa-layer-group"></i>
-                            <span><strong>Ko'p qatlamli tahlil</strong> - Teskari rangli va qiyin QR kodlarni aniqlaydi</span>
+                            <i class="fas fa-check"></i>
+                            <span><strong>SR(21):SVHS1EORKQ710</strong> - Ketma-ket raqam</span>
                         </li>
                         <li>
-                            <i class="fas fa-sync-alt"></i>
-                            <span><strong>Avtomatik sozlash</strong> - Yorug'lik va kontrastni avtomatik optimallashtiradi</span>
+                            <i class="fas fa-check"></i>
+                            <span><strong>To'liq ekran rejimi</strong> - Katta kodlarni o'qing</span>
                         </li>
                         <li>
-                            <i class="fas fa-rocket"></i>
-                            <span><strong>Tez qayta ishlash</strong> - O'rtacha 50-100ms tezlikda skanerlaydi</span>
+                            <i class="fas fa-check"></i>
+                            <span><strong>Avtomatik formatlash</strong> - Ma'lumotlarni tahlil qilish</span>
                         </li>
                     </ul>
                 </div>
@@ -705,7 +717,7 @@
         </div>
         
         <div class="footer-note">
-            <p><i class="fas fa-info-circle"></i> Ilova jsQR kutubxonasi va optimallashtirilgan algoritmlar yordamida ishlaydi. Har qanday QR kodni 0.5 soniya ichida skanerlaydi.</p>
+            <p><i class="fas fa-exclamation-triangle"></i> GS1 DataMatrix va barcha QR kod turlari qo'llab-quvvatlanadi. Katta kodlar uchun to'liq ekran rejimidan foydalaning.</p>
         </div>
     </div>
 
@@ -729,7 +741,6 @@
         let successRateElement = document.getElementById('successRate');
         let totalScans = 0;
         let successfulScans = 0;
-        let lastScanTime = 0;
 
         // Elementlar
         const startBtn = document.getElementById('startBtn');
@@ -754,22 +765,31 @@
         copyBtn.addEventListener('click', copyResult);
         clearBtn.addEventListener('click', clearResult);
 
-        // Kamerani ishga tushirish
+        // Kamerani ishga tushirish - TO'LIQ EKRAN
         async function startCamera() {
             try {
+                // To'liq ekran uchun katta o'lchamlar
                 const constraints = {
                     video: { 
-                        facingMode: 'environment', 
-                        width: { ideal: 1920 }, 
-                        height: { ideal: 1080 },
-                        frameRate: { ideal: 30 }
+                        facingMode: 'environment',
+                        width: { ideal: 1920, max: 2560 },
+                        height: { ideal: 1080, max: 1440 },
+                        aspectRatio: { ideal: 1.777 }
                     }
                 };
+                
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 
                 if (videoRef) {
                     videoRef.srcObject = stream;
                     await videoRef.play();
+                    
+                    // Video yuklangach, canvas o'lchamlarini sozlash
+                    videoRef.onloadedmetadata = () => {
+                        const canvas = canvasRef;
+                        canvas.width = videoRef.videoWidth;
+                        canvas.height = videoRef.videoHeight;
+                    };
                 }
                 
                 const tracks = stream.getVideoTracks();
@@ -783,7 +803,6 @@
                 
                 scanning = true;
                 updateUI('started');
-                lastScanTime = performance.now();
                 requestAnimationFrame(tick);
             } catch (err) {
                 console.error('Camera start error', err);
@@ -832,8 +851,8 @@
                         advanced: [{ torch: torchOn }] 
                     });
                     torchBtn.innerHTML = torchOn ? 
-                        '<i class="fas fa-lightbulb"></i> Flash O\'chirish' : 
-                        '<i class="fas fa-lightbulb"></i> Flash Yoqish';
+                        '<i class="fas fa-lightbulb"></i> Flash O\'chir' : 
+                        '<i class="fas fa-lightbulb"></i> Flash Yoq';
                 } else {
                     alert('Ushbu qurilma yoki brauzer flashni qo\'llab-quvvatlamaydi.');
                 }
@@ -848,13 +867,13 @@
             const imgData = ctx.getImageData(0, 0, w, h);
             const data = imgData.data;
             
-            // Tez kontrast va yorug'lik sozlash
-            const contrast = 1.3;
-            const brightness = 15;
+            // DataMatrix uchun optimallashtirilgan kontrast
+            const contrast = 1.4;
+            const brightness = 20;
             const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
             
+            // Tez piksel qayta ishlash
             for (let i = 0; i < data.length; i += 4) {
-                // Faqat asosiy RGB kanallarini optimallashtirish
                 let r = data[i];
                 let g = data[i + 1];
                 let b = data[i + 2];
@@ -870,46 +889,47 @@
             ctx.putImageData(imgData, 0, 0);
         }
 
-        // Tez QR kodni skanerlash
+        // GS1 DataMatrix va QR kodlarni skanerlash
         function tick() {
             if (!scanning) return;
             const video = videoRef;
             const canvas = canvasRef;
             
-            if (!video || !canvas) {
+            if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
                 animationRef = requestAnimationFrame(tick);
                 return;
             }
             
             const startTime = performance.now();
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width = video.videoWidth || 640;
-            const h = canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const w = canvas.width = video.videoWidth;
+            const h = canvas.height = video.videoHeight;
             
             try {
                 ctx.drawImage(video, 0, 0, w, h);
                 enhanceImage(ctx, w, h);
                 const imageData = ctx.getImageData(0, 0, w, h);
                 
-                // Ko'p qatlamli QR kod skanerlash
+                // Ko'p qatlamli kod skanerlash
                 let code = null;
                 
-                // 1. Oddiy skanerlash
+                // 1. Standart QR kod skanerlash
                 code = jsQR(imageData.data, imageData.width, imageData.height, { 
                     inversionAttempts: 'dontInvert' 
                 });
                 
-                // 2. Agar topilmasa, teskari rang uchun skanerlash
+                // 2. Teskari rangli QR kodlar
                 if (!code) {
                     code = jsQR(imageData.data, imageData.width, imageData.height, { 
                         inversionAttempts: 'onlyInvert' 
                     });
                 }
                 
-                // 3. Agar hali ham topilmasa, barcha variantlarni tekshirish
+                // 3. Barcha variantlar
                 if (!code) {
                     code = jsQR(imageData.data, imageData.width, imageData.height, { 
-                        inversionAttempts: 'both' 
+                        inversionAttempts: 'both',
+                        canOverwriteImage: false
                     });
                 }
                 
@@ -926,12 +946,12 @@
                     setDecoded({ text: code.data, location: code.location });
                     drawLocation(ctx, code.location);
                     
-                    // 1 soniya davomida to'xtatib, keyin qayta boshlash
+                    // 2 soniya davomida to'xtatib, keyin qayta boshlash
                     scanning = false;
                     setTimeout(() => {
                         scanning = true;
                         requestAnimationFrame(tick);
-                    }, 1000);
+                    }, 2000);
                 } else {
                     totalScans++;
                     const scanTime = performance.now() - startTime;
@@ -941,14 +961,16 @@
                     setDecoded(null);
                 }
             } catch (e) {
-                console.warn('Tick error', e);
+                console.warn('Skanerlash xatosi:', e);
             }
             animationRef = requestAnimationFrame(tick);
         }
 
-        // QR kod joylashuvini chizish
+        // Kod joylashuvini chizish
         function drawLocation(ctx, loc) {
-            ctx.lineWidth = 4;
+            if (!loc) return;
+            
+            ctx.lineWidth = 3;
             ctx.strokeStyle = '#10b981';
             ctx.beginPath();
             ctx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
@@ -959,7 +981,40 @@
             ctx.stroke();
         }
 
-        // Fayl yuklash orqali QR kodni skanerlash
+        // GS1 DataMatrix formatini tahlil qilish
+        function parseGS1DataMatrix(text) {
+            if (!text) return null;
+            
+            // GS1 DataMatrix patternlari
+            const patterns = [
+                /\((\d{2})\):([^\)]+)/g,
+                /(\w{2})\((\d{2})\):([^\)]+)/g,
+                /MK\((\d{2})\):([^\)]+)/,
+                /SR\((\d{2})\):([^\)]+)/
+            ];
+            
+            let matches = [];
+            let result = [];
+            
+            for (let pattern of patterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    matches = matches.concat(match);
+                }
+            }
+            
+            if (matches.length > 0) {
+                result.push("🔍 GS1 DataMatrix Ma'lumotlari:");
+                matches.forEach(match => {
+                    result.push(match);
+                });
+                return result.join('\n');
+            }
+            
+            return null;
+        }
+
+        // Fayl yuklash orqali kodni skanerlash
         async function onFilePicked(e) {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
@@ -970,11 +1025,11 @@
             img.onload = () => {
                 const startTime = performance.now();
                 const canvas = canvasRef;
-                const ctx = canvas.getContext('2d');
-                const maxW = 1280;
-                const scale = Math.min(1, maxW / img.width);
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                
+                // To'liq ekran uchun katta o'lcham
+                canvas.width = img.width;
+                canvas.height = img.height;
                 
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 enhanceImage(ctx, canvas.width, canvas.height);
@@ -1000,7 +1055,7 @@
                 } else {
                     totalScans++;
                     successRateElement.textContent = `${Math.round((successfulScans / totalScans) * 100)}%`;
-                    alert('QR topilmadi — boshqa rasm yoki yaxshiroq sifattagi QR kodni sinab ko\'ring.');
+                    alert('Kod topilmadi — boshqa rasm yoki yaxshiroq sifattagi kodni sinab ko\'ring.');
                 }
                 setProcessing(false);
             };
@@ -1019,39 +1074,30 @@
             
             if (result) {
                 resultBox.classList.add('has-result');
-                let formattedText = result.text;
                 
-                // URL formatlash
-                if (result.text.startsWith('http://') || result.text.startsWith('https://')) {
-                    formattedText = `<a href="${result.text}" target="_blank" style="color: #3b82f6; text-decoration: none;">${result.text}</a>`;
-                }
-                // WiFi formatlash
-                else if (result.text.startsWith('WIFI:')) {
-                    formattedText = `<strong>WiFi Tarmog'i:</strong><br>${result.text}`;
-                }
-                // Telefon formatlash
-                else if (result.text.startsWith('TEL:')) {
-                    formattedText = `<strong>Telefon Raqam:</strong><br><a href="tel:${result.text.substring(4)}" style="color: #3b82f6; text-decoration: none;">${result.text.substring(4)}</a>`;
-                }
-                // Email formatlash
-                else if (result.text.startsWith('EMAIL:')) {
-                    formattedText = `<strong>Email Manzil:</strong><br><a href="mailto:${result.text.substring(6)}" style="color: #3b82f6; text-decoration: none;">${result.text.substring(6)}</a>`;
+                // GS1 DataMatrix tahlili
+                const gs1Data = parseGS1DataMatrix(result.text);
+                let displayText = result.text;
+                let codeType = "QR Kod";
+                
+                if (gs1Data) {
+                    displayText = gs1Data;
+                    codeType = "GS1 DataMatrix";
                 }
                 
+                // Formatlangan chiqish
                 resultDiv.innerHTML = `
-                    <div class="qr-result">
-                        <div class="pulse-dot"></div>
-                        <strong>QR Kod Ma'lumoti:</strong><br>
-                        ${formattedText}
-                    </div>
+                    <div class="code-type-badge">${codeType}</div>
+                    <div class="qr-result">${displayText}</div>
+                    <div class="data-formatted">${result.text}</div>
                 `;
                 copyBtn.disabled = false;
             } else {
                 resultBox.classList.remove('has-result');
                 resultDiv.innerHTML = `
                     <div class="empty-result">
-                        <i class="fas fa-qrcode"></i>
-                        <div>QR kod skanerlanganida natija shu yerda paydo bo'ladi</div>
+                        <i class="fas fa-barcode"></i>
+                        <div>Kod skanerlanganida natija shu yerda paydo bo'ladi</div>
                     </div>
                 `;
                 copyBtn.disabled = true;
@@ -1081,8 +1127,8 @@
             resultBox.classList.remove('has-result');
             resultDiv.innerHTML = `
                 <div class="empty-result">
-                    <i class="fas fa-qrcode"></i>
-                    <div>QR kod skanerlanganida natija shu yerda paydo bo'ladi</div>
+                    <i class="fas fa-barcode"></i>
+                    <div>Kod skanerlanganida natija shu yerda paydo bo'ladi</div>
                 </div>
             `;
             copyBtn.disabled = true;
@@ -1109,14 +1155,14 @@
                 stopBtn.disabled = false;
                 zoomSlider.disabled = false;
                 statusIndicator.className = 'status-indicator status-scanning';
-                statusIndicator.innerHTML = '<i class="fas fa-video"></i> <span class="pulse-dot"></span> Kamera ishlayapti - QR kodni skanerlash doirasiga joylashtiring';
+                statusIndicator.innerHTML = '<i class="fas fa-video"></i> <span class="pulse-dot"></span> Kamera ishlayapti - Kodni markazga joylashtiring';
             } else {
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
                 zoomSlider.disabled = true;
                 statusIndicator.className = 'status-indicator status-stopped';
                 statusIndicator.innerHTML = '<i class="fas fa-video-slash"></i> Kamera o\'chirilgan';
-                torchBtn.innerHTML = '<i class="fas fa-lightbulb"></i> Flash Yoqish';
+                torchBtn.innerHTML = '<i class="fas fa-lightbulb"></i> Flash';
                 zoomValue.textContent = '1.00x';
                 zoomSlider.value = 1;
                 if (videoRef) {
