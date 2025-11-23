@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Kod O'qish va Tiniqlashtirish Dasturi</title>
+    <title>Mukammal QR Kod Skaner</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * {
@@ -14,14 +14,18 @@
         }
         
         body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
             color: white;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
+            width: 100%;
             margin: 0 auto;
         }
         
@@ -30,177 +34,280 @@
             margin-bottom: 30px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+            border-radius: 20px;
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
         }
         
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .subtitle {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             opacity: 0.9;
+            margin-bottom: 10px;
         }
         
         .app-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 30px;
             margin-bottom: 30px;
+            justify-content: center;
         }
         
-        .upload-section, .camera-section {
+        .scanner-section, .result-section {
             flex: 1;
-            min-width: 300px;
+            min-width: 450px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 20px;
+            padding: 25px;
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
         }
         
         .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.3);
             padding-bottom: 10px;
-        }
-        
-        .upload-area {
-            border: 2px dashed rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
-            padding: 30px;
             text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
         }
         
-        .upload-area:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.8);
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+        
+        .scanner-frame {
+            width: 70%;
+            height: 70%;
+            border: 3px solid #00ff00;
+            border-radius: 15px;
+            box-shadow: 0 0 0 500px rgba(0, 0, 0, 0.7);
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+        
+        .scanner-frame::before, .scanner-frame::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #00ff00;
+        }
+        
+        .scanner-frame::before {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .scanner-frame::after {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        @keyframes pulse {
+            0% { border-color: #00ff00; }
+            50% { border-color: #00cc00; }
+            100% { border-color: #00ff00; }
+        }
+        
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #00ff00, transparent);
+            top: 50%;
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
         }
         
         .btn {
             background: rgba(255, 255, 255, 0.2);
             border: none;
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 14px 24px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.1rem;
             transition: all 0.3s ease;
-            display: inline-block;
-            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
         
         .btn:hover {
             background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         
         .btn-primary {
-            background: rgba(41, 128, 185, 0.7);
+            background: linear-gradient(135deg, #00b09b, #96c93d);
         }
         
         .btn-primary:hover {
-            background: rgba(41, 128, 185, 0.9);
+            background: linear-gradient(135deg, #00a08b, #8ab82d);
         }
         
-        .preview-container {
-            margin-top: 20px;
-            text-align: center;
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
         }
         
-        .preview-title {
-            margin-bottom: 10px;
-            font-size: 1.2rem;
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #e53a5f, #e54527);
         }
         
-        #imagePreview, #cameraPreview {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        .btn-success {
+            background: linear-gradient(135deg, #2193b0, #6dd5ed);
         }
         
-        .controls {
-            margin-top: 15px;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .result-section {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        .btn-success:hover {
+            background: linear-gradient(135deg, #1d84a0, #5dc5dd);
         }
         
         .result-box {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
             margin-top: 15px;
-            min-height: 100px;
+            min-height: 150px;
             word-break: break-all;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .hidden {
-            display: none;
+        .result-content {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            flex-grow: 1;
         }
         
-        .zoom-controls {
+        .result-type {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .status-indicator {
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin-top: 15px;
             gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
         }
         
-        .slider-container {
-            flex-grow: 1;
-            max-width: 300px;
-        }
-        
-        .slider {
-            width: 100%;
-            height: 8px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+        .status-dot {
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: white;
-            cursor: pointer;
+            background: #ff4757;
         }
         
-        .enhance-controls {
+        .status-dot.active {
+            background: #2ed573;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .stats {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffdd59;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
         }
         
         footer {
@@ -209,6 +316,24 @@
             padding: 20px;
             font-size: 0.9rem;
             opacity: 0.8;
+            width: 100%;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
         }
         
         @media (max-width: 768px) {
@@ -216,8 +341,16 @@
                 flex-direction: column;
             }
             
+            .scanner-section, .result-section {
+                min-width: 100%;
+            }
+            
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
+            }
+            
+            .scanner-container {
+                height: 300px;
             }
         }
     </style>
@@ -225,444 +358,330 @@
 <body>
     <div class="container">
         <header>
-            <h1>QR Kod O'qish va Tiniqlashtirish Dasturi</h1>
-            <p class="subtitle">QR kodni yuklang yoki kameradan oling, yaqinlashtiring va tiniqlashtiring</p>
+            <h1>Mukammal QR Kod Skaner</h1>
+            <p class="subtitle">QR kodni aniq va tez skaner qilish dasturi</p>
+            <p>Kamerani yoqing va QR kodni ramkaga qarating</p>
         </header>
         
         <div class="app-container">
-            <div class="upload-section">
-                <h2 class="section-title">Fayl Yuklash</h2>
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📁</div>
-                    <p>QR kod rasmini bu yerga tortib keling yoki bosing</p>
-                    <input type="file" id="fileInput" accept="image/*" class="hidden">
-                </div>
-                <button class="btn btn-primary" id="uploadBtn">Fayl Tanlash</button>
+            <div class="scanner-section">
+                <h2 class="section-title">QR Kod Skanerlash</h2>
                 
-                <div class="preview-container">
-                    <p class="preview-title">Yuklangan Rasm:</p>
-                    <img id="imagePreview" class="hidden">
-                </div>
-                
-                <div class="zoom-controls">
-                    <button class="btn" id="zoomOutBtn">-</button>
-                    <div class="slider-container">
-                        <input type="range" min="1" max="300" value="100" class="slider" id="zoomSlider">
+                <div class="scanner-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas"></canvas>
+                    
+                    <div class="scanner-overlay">
+                        <div class="scanner-frame">
+                            <div class="scanner-line"></div>
+                        </div>
                     </div>
-                    <button class="btn" id="zoomInBtn">+</button>
                 </div>
                 
-                <div class="enhance-controls">
-                    <button class="btn" id="brightnessBtn">Yorqinlik</button>
-                    <button class="btn" id="contrastBtn">Kontrast</button>
-                    <button class="btn" id="sharpenBtn">Tiniqlashtirish</button>
-                    <button class="btn" id="resetBtn">Asl holati</button>
-                </div>
-            </div>
-            
-            <div class="camera-section">
-                <h2 class="section-title">Kamera Orqali</h2>
-                <div class="preview-container">
-                    <video id="cameraPreview" class="hidden" autoplay playsinline></video>
-                    <canvas id="qrCanvas" class="hidden"></canvas>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Kamera o'chirilgan</span>
                 </div>
                 
                 <div class="controls">
-                    <button class="btn btn-primary" id="startCameraBtn">Kamerani Yoqish</button>
-                    <button class="btn" id="captureBtn" disabled>Rasmni Olish</button>
-                    <button class="btn" id="stopCameraBtn" disabled>Kamerani O'chirish</button>
+                    <button class="btn btn-primary" id="startButton">
+                        <i>▶</i> Kamerani Yoqish
+                    </button>
+                    <button class="btn btn-danger" id="stopButton" disabled>
+                        <i>⏹</i> Kamerani O'chirish
+                    </button>
+                    <button class="btn btn-success" id="captureButton" disabled>
+                        <i>📷</i> Rasmni Olish
+                    </button>
                 </div>
                 
-                <div class="zoom-controls">
-                    <button class="btn" id="camZoomOutBtn">-</button>
-                    <div class="slider-container">
-                        <input type="range" min="1" max="300" value="100" class="slider" id="camZoomSlider">
-                    </div>
-                    <button class="btn" id="camZoomInBtn">+</button>
+                <div class="instructions">
+                    <p><strong>Ishlatish bo'yicha ko'rsatma:</strong></p>
+                    <ol>
+                        <li>Kamerani yoqish tugmasini bosing</li>
+                        <li>QR kodni oq ramka ichiga qarating</li>
+                        <li>QR kod avtomatik skanerlanadi va natija ko'rsatiladi</li>
+                        <li>Agar skaner qilishda muammo bo'lsa, "Rasmni olish" tugmasini bosing</li>
+                    </ol>
                 </div>
             </div>
-        </div>
-        
-        <div class="result-section">
-            <h2 class="section-title">QR Kod Ma'lumoti</h2>
-            <div class="result-box" id="resultBox">
-                QR kod ma'lumoti bu yerda paydo bo'ladi...
-            </div>
-            <div class="controls">
-                <button class="btn btn-primary" id="decodeBtn" disabled>QR Kodni O'qish</button>
-                <button class="btn" id="copyBtn" disabled>Nusxa Olish</button>
-                <button class="btn" id="clearBtn">Tozalash</button>
+            
+            <div class="result-section">
+                <h2 class="section-title">Skanerlash Natijasi</h2>
+                
+                <div class="result-box">
+                    <div class="result-content" id="resultContent">
+                        QR kod ma'lumoti bu yerda paydo bo'ladi...
+                    </div>
+                    <div class="result-type" id="resultType">
+                        QR kod turi: Skanerlanmagan
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="scannedCount">0</div>
+                        <div class="stat-label">Skanerlar</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="successRate">0%</div>
+                        <div class="stat-label">Muvaffaqiyat</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="scanTime">0ms</div>
+                        <div class="stat-label">Skaner Vaqti</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="copyButton" disabled>
+                        <i>📋</i> Nusxa Olish
+                    </button>
+                    <button class="btn" id="clearButton">
+                        <i>🗑️</i> Tozalash
+                    </button>
+                    <button class="btn" id="shareButton" disabled>
+                        <i>📤</i> Ulashish
+                    </button>
+                </div>
             </div>
         </div>
         
         <footer>
-            <p>QR Kod O'qish va Tiniqlashtirish Dasturi &copy; 2023</p>
+            <p>Mukammal QR Kod Skaner &copy; 2023 - Barcha huquqlar himoyalangan</p>
         </footer>
     </div>
 
     <script>
         // Elementlarni tanlab olish
-        const fileInput = document.getElementById('fileInput');
-        const uploadArea = document.getElementById('uploadArea');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const imagePreview = document.getElementById('imagePreview');
-        const cameraPreview = document.getElementById('cameraPreview');
-        const qrCanvas = document.getElementById('qrCanvas');
-        const startCameraBtn = document.getElementById('startCameraBtn');
-        const captureBtn = document.getElementById('captureBtn');
-        const stopCameraBtn = document.getElementById('stopCameraBtn');
-        const decodeBtn = document.getElementById('decodeBtn');
-        const copyBtn = document.getElementById('copyBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const resultBox = document.getElementById('resultBox');
-        const zoomSlider = document.getElementById('zoomSlider');
-        const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-        const camZoomSlider = document.getElementById('camZoomSlider');
-        const camZoomInBtn = document.getElementById('camZoomInBtn');
-        const camZoomOutBtn = document.getElementById('camZoomOutBtn');
-        const brightnessBtn = document.getElementById('brightnessBtn');
-        const contrastBtn = document.getElementById('contrastBtn');
-        const sharpenBtn = document.getElementById('sharpenBtn');
-        const resetBtn = document.getElementById('resetBtn');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const captureButton = document.getElementById('captureButton');
+        const resultContent = document.getElementById('resultContent');
+        const resultType = document.getElementById('resultType');
+        const copyButton = document.getElementById('copyButton');
+        const clearButton = document.getElementById('clearButton');
+        const shareButton = document.getElementById('shareButton');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const scannedCount = document.getElementById('scannedCount');
+        const successRate = document.getElementById('successRate');
+        const scanTime = document.getElementById('scanTime');
         
         let stream = null;
-        let originalImage = null;
-        let currentZoom = 100;
-        let camCurrentZoom = 100;
+        let scanning = false;
+        let scanInterval = null;
+        let totalScans = 0;
+        let successfulScans = 0;
+        let lastScanTime = 0;
         
-        // Fayl yuklash funksiyalari
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
-        
-        uploadBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-        
-        fileInput.addEventListener('change', function(e) {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.classList.remove('hidden');
-                    originalImage = new Image();
-                    originalImage.src = e.target.result;
-                    decodeBtn.disabled = false;
-                    resetZoom();
+        // Kamerani yoqish
+        startButton.addEventListener('click', async () => {
+            try {
+                // Oldingi kamerani tozalash
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                 }
                 
-                reader.readAsDataURL(this.files[0]);
-            }
-        });
-        
-        // Zoom funksiyalari
-        function updateZoom() {
-            imagePreview.style.transform = `scale(${currentZoom / 100})`;
-            zoomSlider.value = currentZoom;
-        }
-        
-        function resetZoom() {
-            currentZoom = 100;
-            updateZoom();
-        }
-        
-        zoomInBtn.addEventListener('click', () => {
-            if (currentZoom < 300) {
-                currentZoom += 10;
-                updateZoom();
-            }
-        });
-        
-        zoomOutBtn.addEventListener('click', () => {
-            if (currentZoom > 10) {
-                currentZoom -= 10;
-                updateZoom();
-            }
-        });
-        
-        zoomSlider.addEventListener('input', () => {
-            currentZoom = parseInt(zoomSlider.value);
-            updateZoom();
-        });
-        
-        // Kamera zoom funksiyalari
-        function updateCamZoom() {
-            cameraPreview.style.transform = `scale(${camCurrentZoom / 100})`;
-            camZoomSlider.value = camCurrentZoom;
-        }
-        
-        camZoomInBtn.addEventListener('click', () => {
-            if (camCurrentZoom < 300) {
-                camCurrentZoom += 10;
-                updateCamZoom();
-            }
-        });
-        
-        camZoomOutBtn.addEventListener('click', () => {
-            if (camCurrentZoom > 10) {
-                camCurrentZoom -= 10;
-                updateCamZoom();
-            }
-        });
-        
-        camZoomSlider.addEventListener('input', () => {
-            camCurrentZoom = parseInt(camZoomSlider.value);
-            updateCamZoom();
-        });
-        
-        // Kamera funksiyalari
-        startCameraBtn.addEventListener('click', async () => {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
+                // Kamerani sozlash
+                const constraints = {
                     video: { 
                         facingMode: 'environment',
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     } 
-                });
+                };
                 
-                cameraPreview.srcObject = stream;
-                cameraPreview.classList.remove('hidden');
-                startCameraBtn.disabled = true;
-                captureBtn.disabled = false;
-                stopCameraBtn.disabled = false;
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
                 
-                // Kamerani ishga tushirgach, avtomatik ravishda QR kodni skaner qilish
-                scanQRFromCamera();
+                // Holatni yangilash
+                statusDot.classList.add('active');
+                statusText.textContent = "QR kod qidirilmoqda...";
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                captureButton.disabled = false;
+                
+                // Skanerlashni boshlash
+                startScanning();
+                
             } catch (err) {
                 console.error("Kamerani ochishda xatolik: ", err);
-                resultBox.textContent = "Kamerani ochishda xatolik yuz berdi. Iltimos, kameraga ruxsat bering.";
+                resultContent.textContent = "Kamerani ochishda xatolik yuz berdi. Iltimos, kameraga ruxsat bering.";
+                statusText.textContent = "Xatolik: Kamera ochilmadi";
             }
         });
         
-        stopCameraBtn.addEventListener('click', () => {
+        // Kamerani o'chirish
+        stopButton.addEventListener('click', () => {
+            stopScanning();
+            statusDot.classList.remove('active');
+            statusText.textContent = "Kamera o'chirilgan";
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            captureButton.disabled = true;
+        });
+        
+        // Rasmni olish
+        captureButton.addEventListener('click', () => {
+            captureAndDecode();
+        });
+        
+        // Skanerlashni boshlash
+        function startScanning() {
+            scanning = true;
+            scanInterval = setInterval(captureAndDecode, 500); // Har 500ms da skanerlash
+        }
+        
+        // Skanerlashni to'xtatish
+        function stopScanning() {
+            scanning = false;
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
-                cameraPreview.classList.add('hidden');
-                startCameraBtn.disabled = false;
-                captureBtn.disabled = true;
-                stopCameraBtn.disabled = true;
+                video.srcObject = null;
+                stream = null;
             }
-        });
+        }
         
-        // Rasmni olish funksiyasi
-        captureBtn.addEventListener('click', () => {
-            const context = qrCanvas.getContext('2d');
-            qrCanvas.width = cameraPreview.videoWidth;
-            qrCanvas.height = cameraPreview.videoHeight;
-            context.drawImage(cameraPreview, 0, 0, qrCanvas.width, qrCanvas.height);
+        // Rasmni olish va QR kodni dekod qilish
+        function captureAndDecode() {
+            if (!stream || !scanning) return;
             
-            // Olingan rasmni ko'rsatish
-            imagePreview.src = qrCanvas.toDataURL();
-            imagePreview.classList.remove('hidden');
-            originalImage = new Image();
-            originalImage.src = qrCanvas.toDataURL();
-            decodeBtn.disabled = false;
-            resetZoom();
-        });
-        
-        // QR kodni o'qish funksiyasi
-        decodeBtn.addEventListener('click', () => {
-            decodeQRCode(imagePreview);
-        });
-        
-        function decodeQRCode(imageElement) {
-            const canvas = document.createElement('canvas');
+            const startTime = performance.now();
+            
+            // Canvas o'lchamlarini sozlash
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Videodan rasm olish
             const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            canvas.width = imageElement.naturalWidth || imageElement.width;
-            canvas.height = imageElement.naturalHeight || imageElement.height;
-            
-            context.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
-            
+            // Rasm ma'lumotlarini olish
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
             
+            // QR kodni dekod qilish
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert',
+            });
+            
+            const endTime = performance.now();
+            lastScanTime = Math.round(endTime - startTime);
+            totalScans++;
+            
+            // Natijani yangilash
             if (code) {
-                resultBox.textContent = code.data;
-                copyBtn.disabled = false;
+                successfulScans++;
+                displayResult(code.data, code);
+                statusText.textContent = "QR kod muvaffaqiyatli skanerlandi!";
             } else {
-                resultBox.textContent = "QR kod topilmadi. Iltimos, rasmni yaqinlashtiring yoki tiniqlashtiring.";
-                copyBtn.disabled = true;
+                statusText.textContent = "QR kod qidirilmoqda...";
             }
+            
+            // Statistikani yangilash
+            updateStats();
         }
         
-        // Kamera orqali QR kodni avtomatik skaner qilish
-        function scanQRFromCamera() {
-            if (!cameraPreview.srcObject) return;
+        // Natijani ko'rsatish
+        function displayResult(data, code) {
+            resultContent.textContent = data;
             
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            
-            canvas.width = cameraPreview.videoWidth;
-            canvas.height = cameraPreview.videoHeight;
-            
-            context.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
-            
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
-            
-            if (code) {
-                resultBox.textContent = code.data;
-                copyBtn.disabled = false;
-                
-                // QR kod topilganda, rasmni avtomatik olish va ko'rsatish
-                imagePreview.src = canvas.toDataURL();
-                imagePreview.classList.remove('hidden');
-                originalImage = new Image();
-                originalImage.src = canvas.toDataURL();
-                decodeBtn.disabled = false;
-                resetZoom();
+            // QR kod turini aniqlash
+            let type = "Noma'lum";
+            if (data.startsWith('http://') || data.startsWith('https://')) {
+                type = "Veb-sahifa";
+            } else if (data.startsWith('tel:')) {
+                type = "Telefon raqami";
+            } else if (data.startsWith('mailto:')) {
+                type = "Elektron pochta";
+            } else if (data.startsWith('WIFI:')) {
+                type = "Wi-Fi tarmog'i";
+            } else if (data.startsWith('BEGIN:VCARD')) {
+                type = "Kontakt";
+            } else if (/^\d+$/.test(data)) {
+                type = "Raqamli ma'lumot";
+            } else {
+                type = "Matn";
             }
             
-            // Agar kamera yoqilgan bo'lsa, skanerlashni davom ettirish
-            if (cameraPreview.srcObject) {
-                requestAnimationFrame(scanQRFromCamera);
-            }
+            resultType.textContent = `QR kod turi: ${type}`;
+            
+            // Tugmalarni faollashtirish
+            copyButton.disabled = false;
+            shareButton.disabled = false;
         }
         
-        // Rasmni tiniqlashtirish funksiyalari
-        brightnessBtn.addEventListener('click', () => {
-            applyFilter('brightness', 1.5);
-        });
-        
-        contrastBtn.addEventListener('click', () => {
-            applyFilter('contrast', 1.5);
-        });
-        
-        sharpenBtn.addEventListener('click', () => {
-            applySharpenFilter();
-        });
-        
-        resetBtn.addEventListener('click', () => {
-            if (originalImage) {
-                imagePreview.src = originalImage.src;
-            }
-        });
-        
-        function applyFilter(filter, value) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            
-            canvas.width = imagePreview.naturalWidth || imagePreview.width;
-            canvas.height = imagePreview.naturalHeight || imagePreview.height;
-            
-            context.filter = `${filter}(${value})`;
-            context.drawImage(imagePreview, 0, 0, canvas.width, canvas.height);
-            
-            imagePreview.src = canvas.toDataURL();
+        // Statistikani yangilash
+        function updateStats() {
+            scannedCount.textContent = totalScans;
+            const rate = totalScans > 0 ? Math.round((successfulScans / totalScans) * 100) : 0;
+            successRate.textContent = `${rate}%`;
+            scanTime.textContent = `${lastScanTime}ms`;
         }
         
-        function applySharpenFilter() {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            
-            canvas.width = imagePreview.naturalWidth || imagePreview.width;
-            canvas.height = imagePreview.naturalHeight || imagePreview.height;
-            
-            context.drawImage(imagePreview, 0, 0, canvas.width, canvas.height);
-            
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            const width = imageData.width;
-            const height = imageData.height;
-            
-            // Oddiy sharpen filtr
-            for (let y = 1; y < height - 1; y += 1) {
-                for (let x = 1; x < width - 1; x += 1) {
-                    const idx = (y * width + x) * 4;
-                    
-                    // Sharpen matritsasi
-                    const sharpen = [
-                        [0, -1, 0],
-                        [-1, 5, -1],
-                        [0, -1, 0]
-                    ];
-                    
-                    let r = 0, g = 0, b = 0;
-                    
-                    for (let ky = -1; ky <= 1; ky++) {
-                        for (let kx = -1; kx <= 1; kx++) {
-                            const kidx = ((y + ky) * width + (x + kx)) * 4;
-                            const weight = sharpen[ky + 1][kx + 1];
-                            
-                            r += data[kidx] * weight;
-                            g += data[kidx + 1] * weight;
-                            b += data[kidx + 2] * weight;
-                        }
-                    }
-                    
-                    data[idx] = Math.max(0, Math.min(255, r));
-                    data[idx + 1] = Math.max(0, Math.min(255, g));
-                    data[idx + 2] = Math.max(0, Math.min(255, b));
-                }
-            }
-            
-            context.putImageData(imageData, 0, 0);
-            imagePreview.src = canvas.toDataURL();
-        }
-        
-        // Qolgan funksiyalar
-        copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(resultBox.textContent)
+        // Nusxa olish
+        copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(resultContent.textContent)
                 .then(() => {
-                    const originalText = copyBtn.textContent;
-                    copyBtn.textContent = 'Nusxa olindi!';
+                    const originalText = copyButton.innerHTML;
+                    copyButton.innerHTML = '<i>✓</i> Nusxa olindi!';
                     setTimeout(() => {
-                        copyBtn.textContent = originalText;
+                        copyButton.innerHTML = originalText;
                     }, 2000);
                 })
                 .catch(err => {
                     console.error('Nusxa olishda xatolik: ', err);
+                    resultContent.textContent = "Nusxa olishda xatolik yuz berdi.";
                 });
         });
         
-        clearBtn.addEventListener('click', () => {
-            resultBox.textContent = "QR kod ma'lumoti bu yerda paydo bo'ladi...";
-            imagePreview.classList.add('hidden');
-            fileInput.value = '';
-            decodeBtn.disabled = true;
-            copyBtn.disabled = true;
+        // Tozalash
+        clearButton.addEventListener('click', () => {
+            resultContent.textContent = "QR kod ma'lumoti bu yerda paydo bo'ladi...";
+            resultType.textContent = "QR kod turi: Skanerlanmagan";
+            copyButton.disabled = true;
+            shareButton.disabled = true;
+            totalScans = 0;
+            successfulScans = 0;
+            updateStats();
+        });
+        
+        // Ulashish
+        shareButton.addEventListener('click', async () => {
+            const shareData = {
+                title: 'QR Kod Ma\'lumoti',
+                text: resultContent.textContent
+            };
             
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                cameraPreview.classList.add('hidden');
-                startCameraBtn.disabled = false;
-                captureBtn.disabled = true;
-                stopCameraBtn.disabled = true;
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    // Agar ulashish API qo'llab-quvvatlanmasa, nusxa olish
+                    await navigator.clipboard.writeText(resultContent.textContent);
+                    const originalText = shareButton.innerHTML;
+                    shareButton.innerHTML = '<i>✓</i> Nusxa olindi!';
+                    setTimeout(() => {
+                        shareButton.innerHTML = originalText;
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Ulashishda xatolik: ', err);
             }
         });
         
-        // Drayv va tush bilan fayl tortib olish
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = 'rgba(255, 255, 255, 0.2)';
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.background = '';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '';
-            
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                fileInput.files = e.dataTransfer.files;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.classList.remove('hidden');
-                    originalImage = new Image();
-                    originalImage.src = e.target.result;
-                    decodeBtn.disabled = false;
-                    resetZoom();
-                }
-                
-                reader.readAsDataURL(e.dataTransfer.files[0]);
+        // Dastur yuklanganda kamera ruxsatini tekshirish
+        window.addEventListener('load', () => {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                resultContent.textContent = "Uzr, brauzeringiz kamerani qo'llab-quvvatlamaydi. Iltimos, zamonaviy brauzerdan foydalaning.";
+                startButton.disabled = true;
             }
         });
     </script>
