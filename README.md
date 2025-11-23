@@ -2,894 +2,668 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QR Kod Skaneri</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Kod O'qish va Tiniqlashtirish Dasturi</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            position: fixed;
-            background: #000;
-        }
-
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        /* Video container */
-        #reader {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 1 !important;
-        }
-
-        #reader video {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            object-fit: cover !important;
-            transition: transform 0.2s ease-out;
-        }
-
-        /* Qorong'u overlay */
-        .dark-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        /* Header */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 30;
-        }
-
-        .header-text {
-            color: #fff;
-            font-size: 18px;
-            font-weight: 600;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-        }
-
-        /* Close button */
-        .close-btn {
-            position: fixed;
-            top: 12px;
-            right: 12px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(60, 60, 60, 0.8);
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 40;
-            backdrop-filter: blur(10px);
-        }
-
-        .close-btn:active {
-            transform: scale(0.9);
-            background: rgba(80, 80, 80, 0.9);
-        }
-
-        /* Scan area */
-        .scan-frame {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 280px;
-            height: 280px;
-            z-index: 20;
-            pointer-events: none;
-        }
-
-        /* Burchaklar */
-        .corner {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border: 3px solid #fff;
-        }
-
-        .corner.tl {
-            top: 0;
-            left: 0;
-            border-right: none;
-            border-bottom: none;
-            border-radius: 20px 0 0 0;
-        }
-
-        .corner.tr {
-            top: 0;
-            right: 0;
-            border-left: none;
-            border-bottom: none;
-            border-radius: 0 20px 0 0;
-        }
-
-        .corner.bl {
-            bottom: 0;
-            left: 0;
-            border-right: none;
-            border-top: none;
-            border-radius: 0 0 0 20px;
-        }
-
-        .corner.br {
-            bottom: 0;
-            right: 0;
-            border-left: none;
-            border-top: none;
-            border-radius: 0 0 20px 0;
-        }
-
-        /* Scan line */
-        .scan-line {
-            position: absolute;
-            left: 10px;
-            right: 10px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #4ade80, transparent);
-            animation: scan 2s ease-in-out infinite;
-            box-shadow: 0 0 10px #4ade80;
-        }
-
-        @keyframes scan {
-            0%, 100% { top: 10px; opacity: 0.6; }
-            50% { top: calc(100% - 12px); opacity: 1; }
-        }
-
-        /* Bottom text */
-        .bottom-text {
-            position: fixed;
-            bottom: 140px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            z-index: 20;
-        }
-
-        .bottom-text-inner {
-            display: inline-block;
-            background: rgba(40, 40, 40, 0.85);
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 24px;
-            font-size: 16px;
-            font-weight: 500;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Torch button */
-        .torch-btn {
-            position: fixed;
-            bottom: 40px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(60, 60, 60, 0.85);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-            cursor: pointer;
-            z-index: 20;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-        }
-
-        .torch-btn:active {
-            transform: scale(0.9);
-        }
-
-        .torch-btn.active {
-            background: rgba(250, 204, 21, 0.9);
-            border-color: #fbbf24;
-            box-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
-        }
-
-        /* Focus button */
-        .focus-btn {
-            position: fixed;
-            bottom: 120px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(60, 60, 60, 0.85);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-            cursor: pointer;
-            z-index: 20;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-        }
-
-        .focus-btn:active {
-            transform: scale(0.9);
-        }
-
-        .focus-btn.active {
-            background: rgba(74, 222, 128, 0.9);
-            border-color: #4ade80;
-            box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
-        }
-
-        /* Zoom controls */
-        .zoom-controls {
-            position: fixed;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 25;
-            gap: 10px;
-        }
-
-        .zoom-text {
-            background: rgba(40, 40, 40, 0.9);
-            color: #4ade80;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: 700;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(74, 222, 128, 0.3);
-        }
-
-        .zoom-buttons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .zoom-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(60, 60, 60, 0.9);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-        }
-
-        .zoom-btn:active {
-            transform: scale(0.9);
-            background: rgba(80, 80, 80, 0.9);
-        }
-
-        /* Result modal */
-        .result-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
+            min-height: 100vh;
             padding: 20px;
         }
-
-        .result-modal.show {
-            display: flex;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
-
-        .result-box {
-            background: #1a1a1a;
-            border-radius: 24px;
-            padding: 30px;
-            max-width: 380px;
-            width: 100%;
-        }
-
-        .result-icon {
-            font-size: 64px;
+        
+        header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
-
-        .result-title {
-            color: #fff;
-            font-size: 20px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 20px;
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
-
-        .result-content {
-            background: #2a2a2a;
-            padding: 16px;
-            border-radius: 16px;
-            color: #e0e0e0;
-            word-break: break-all;
-            margin-bottom: 24px;
-            font-size: 14px;
-            line-height: 1.6;
-            max-height: 180px;
-            overflow-y: auto;
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
-
-        .btn-group {
+        
+        .app-container {
             display: flex;
-            gap: 12px;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
         }
-
-        .btn {
+        
+        .upload-section, .camera-section {
             flex: 1;
-            padding: 16px;
-            border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
-
-        .btn-primary {
-            background: #4ade80;
-            color: #000;
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
         }
-
-        .btn-primary:active {
-            transform: scale(0.95);
-            background: #22c55e;
-        }
-
-        .btn-secondary {
-            background: #2a2a2a;
-            color: #fff;
-        }
-
-        .btn-secondary:active {
-            transform: scale(0.95);
-            background: #3a3a3a;
-        }
-
-        /* Loading */
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 30px;
             text-align: center;
-            z-index: 50;
-            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
         }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255,255,255,0.2);
-            border-top-color: #fff;
+        
+        .upload-area:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin: 5px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: rgba(41, 128, 185, 0.7);
+        }
+        
+        .btn-primary:hover {
+            background: rgba(41, 128, 185, 0.9);
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .preview-title {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        #imagePreview, #cameraPreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .result-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .result-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+            word-break: break-all;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .slider-container {
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            background: white;
+            cursor: pointer;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        
+        .enhance-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
         }
-
-        /* Hide html5-qrcode UI */
-        #reader__dashboard_section,
-        #reader__dashboard_section_csr,
-        #reader__header_message,
-        #reader__scan_region,
-        #reader > div:not(video) {
-            display: none !important;
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="reader"></div>
-    
-    <div class="dark-overlay"></div>
-
-    <div class="header">
-        <div class="header-text">Diruni skanerlang</div>
-    </div>
-
-    <button class="close-btn" onclick="closeScanner()">✕</button>
-    
-    <div class="scan-frame">
-        <div class="corner tl"></div>
-        <div class="corner tr"></div>
-        <div class="corner bl"></div>
-        <div class="corner br"></div>
-        <div class="scan-line"></div>
-    </div>
-
-    <div class="bottom-text">
-        <div class="bottom-text-inner">DataMatrix kodini skanerlang</div>
-    </div>
-
-    <button class="torch-btn" id="torchBtn" onclick="toggleTorch()">🔦</button>
-    <button class="focus-btn" id="focusBtn" onclick="manualFocus()">🔍</button>
-
-    <div class="zoom-controls" id="zoomControls">
-        <div class="zoom-text" id="zoomText">1.0x</div>
-        <div class="zoom-buttons">
-            <button class="zoom-btn" onclick="zoomOut()">−</button>
-            <button class="zoom-btn" onclick="zoomIn()">+</button>
-        </div>
-    </div>
-
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <div>Kamera yuklanmoqda...</div>
-    </div>
-
-    <div class="result-modal" id="resultModal">
-        <div class="result-box">
-            <div class="result-icon">✅</div>
-            <div class="result-title">Muvaffaqiyatli skanerlandi!</div>
-            <div class="result-content" id="resultContent"></div>
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="sendToBot()">Botga Yuborish</button>
-                <button class="btn btn-secondary" onclick="scanAgain()">Qayta</button>
+    <div class="container">
+        <header>
+            <h1>QR Kod O'qish va Tiniqlashtirish Dasturi</h1>
+            <p class="subtitle">QR kodni yuklang yoki kameradan oling, yaqinlashtiring va tiniqlashtiring</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="upload-section">
+                <h2 class="section-title">Fayl Yuklash</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <p>QR kod rasmini bu yerga tortib keling yoki bosing</p>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                </div>
+                <button class="btn btn-primary" id="uploadBtn">Fayl Tanlash</button>
+                
+                <div class="preview-container">
+                    <p class="preview-title">Yuklangan Rasm:</p>
+                    <img id="imagePreview" class="hidden">
+                </div>
+                
+                <div class="zoom-controls">
+                    <button class="btn" id="zoomOutBtn">-</button>
+                    <div class="slider-container">
+                        <input type="range" min="1" max="300" value="100" class="slider" id="zoomSlider">
+                    </div>
+                    <button class="btn" id="zoomInBtn">+</button>
+                </div>
+                
+                <div class="enhance-controls">
+                    <button class="btn" id="brightnessBtn">Yorqinlik</button>
+                    <button class="btn" id="contrastBtn">Kontrast</button>
+                    <button class="btn" id="sharpenBtn">Tiniqlashtirish</button>
+                    <button class="btn" id="resetBtn">Asl holati</button>
+                </div>
+            </div>
+            
+            <div class="camera-section">
+                <h2 class="section-title">Kamera Orqali</h2>
+                <div class="preview-container">
+                    <video id="cameraPreview" class="hidden" autoplay playsinline></video>
+                    <canvas id="qrCanvas" class="hidden"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="startCameraBtn">Kamerani Yoqish</button>
+                    <button class="btn" id="captureBtn" disabled>Rasmni Olish</button>
+                    <button class="btn" id="stopCameraBtn" disabled>Kamerani O'chirish</button>
+                </div>
+                
+                <div class="zoom-controls">
+                    <button class="btn" id="camZoomOutBtn">-</button>
+                    <div class="slider-container">
+                        <input type="range" min="1" max="300" value="100" class="slider" id="camZoomSlider">
+                    </div>
+                    <button class="btn" id="camZoomInBtn">+</button>
+                </div>
             </div>
         </div>
+        
+        <div class="result-section">
+            <h2 class="section-title">QR Kod Ma'lumoti</h2>
+            <div class="result-box" id="resultBox">
+                QR kod ma'lumoti bu yerda paydo bo'ladi...
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="decodeBtn" disabled>QR Kodni O'qish</button>
+                <button class="btn" id="copyBtn" disabled>Nusxa Olish</button>
+                <button class="btn" id="clearBtn">Tozalash</button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>QR Kod O'qish va Tiniqlashtirish Dasturi &copy; 2023</p>
+        </footer>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        let html5Qrcode = null;
-        let scannedData = null;
-        let torchEnabled = false;
-        let videoTrack = null;
-        let currentZoom = 1.0;
-        let maxZoom = 5.0;
-        let minZoom = 1.0;
-        let isScanning = false;
-        let autoFocusInterval = null;
-
-        tg.expand();
-        tg.ready();
-
-        // Kamerani ochish
-        async function startCamera() {
-            try {
-                console.log("Kamera ochilmoqda...");
-                
-                // Avval HTML5Qrcode ni ishga tushirish
-                html5Qrcode = new Html5Qrcode("reader");
-                
-                const config = {
-                    fps: 30,
-                    qrbox: { width: 280, height: 280 },
-                    aspectRatio: 1.0,
-                    disableFlip: false
-                };
-
-                await html5Qrcode.start(
-                    { 
-                        facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    },
-                    config,
-                    onScanSuccess,
-                    onScanError
-                );
-
-                console.log("QR skaner ishga tushdi");
-
-                // Video track olish
-                setTimeout(async () => {
-                    const videoElement = document.querySelector('#reader video');
-                    if (videoElement && videoElement.srcObject) {
-                        const stream = videoElement.srcObject;
-                        videoTrack = stream.getVideoTracks()[0];
-                        
-                        if (videoTrack) {
-                            console.log("Video track topildi");
-                            await setupCameraCapabilities();
-                        }
-                    }
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    isScanning = true;
-                    startAutoFocus();
-                    
-                }, 2000);
-
-            } catch (err) {
-                console.error("Kamera xatosi:", err);
-                document.getElementById('loading').innerHTML = 
-                    '<div style="color: #ff4444; text-align: center;">' +
-                    '<div style="font-size: 48px; margin-bottom: 15px;">📷</div>' +
-                    'Kamera ochilmadi<br>' +
-                    '<button onclick="location.reload()" style="margin-top:15px;padding:12px 24px;background:#4ade80;border:none;border-radius:12px;color:#000;font-weight:bold;">Qayta urinish</button>' +
-                    '</div>';
-            }
-        }
-
-        // Kamera imkoniyatlarini sozlash
-        async function setupCameraCapabilities() {
-            if (!videoTrack) return;
-            
-            try {
-                const capabilities = videoTrack.getCapabilities();
-                const settings = videoTrack.getSettings();
-                
-                console.log("Kamera capabilities:", capabilities);
-                console.log("Kamera settings:", settings);
-
-                // Zoom sozlash
-                if (capabilities.zoom) {
-                    maxZoom = Math.min(capabilities.zoom.max || 5.0, 8.0);
-                    minZoom = capabilities.zoom.min || 1.0;
-                    currentZoom = minZoom;
-                    console.log("Zoom sozlandi:", minZoom, "-", maxZoom);
-                }
-
-                // Fokus sozlash
-                if (capabilities.focusMode) {
-                    try {
-                        // Avvalo continuous focus ni urinib ko'ramiz
-                        await videoTrack.applyConstraints({
-                            advanced: [{ 
-                                focusMode: "continuous",
-                                exposureMode: "continuous"
-                            }]
-                        });
-                        console.log("Continuous focus yoqildi");
-                    } catch (e) {
-                        console.log("Continuous focus ishlamadi, manual focus urinamiz");
-                        try {
-                            await videoTrack.applyConstraints({
-                                advanced: [{ focusMode: "manual" }]
-                            });
-                        } catch (e2) {
-                            console.log("Manual focus ham ishlamadi");
-                        }
-                    }
-                }
-
-                // Exposure sozlash
-                if (capabilities.exposureMode) {
-                    try {
-                        await videoTrack.applyConstraints({
-                            advanced: [{ exposureMode: "continuous" }]
-                        });
-                    } catch (e) {
-                        console.log("Exposure sozlash xatosi");
-                    }
-                }
-
-                updateZoomUI();
-
-            } catch (err) {
-                console.error("Kamera sozlash xatosi:", err);
-            }
-        }
-
-        // Avtomatik fokus
-        function startAutoFocus() {
-            if (autoFocusInterval) clearInterval(autoFocusInterval);
-            
-            autoFocusInterval = setInterval(async () => {
-                if (!videoTrack || !isScanning) return;
-                
-                try {
-                    const capabilities = videoTrack.getCapabilities();
-                    
-                    // Agar continuous focus mavjud bo'lsa, uni qayta sozlaymiz
-                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                        await videoTrack.applyConstraints({
-                            advanced: [{ focusMode: "continuous" }]
-                        });
-                    }
-                } catch (err) {
-                    // Ignore errors
-                }
-            }, 3000); // Har 3 soniyada fokusni yangilash
-        }
-
-        // Qo'lda fokus
-        async function manualFocus() {
-            if (!videoTrack) return;
-            
-            try {
-                const capabilities = videoTrack.getCapabilities();
-                const focusBtn = document.getElementById('focusBtn');
-                
-                // Haptic feedback
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.impactOccurred('medium');
-                }
-
-                // Focus trigger
-                focusBtn.classList.add('active');
-                
-                if (capabilities.focusDistance) {
-                    // Turli focus distance larni sinab ko'ramiz
-                    const focusDistances = [0.5, 1.0, 2.0, 3.0];
-                    
-                    for (let distance of focusDistances) {
-                        try {
-                            await videoTrack.applyConstraints({
-                                advanced: [{ focusDistance: distance }]
-                            });
-                            await new Promise(resolve => setTimeout(resolve, 200));
-                        } catch (e) {
-                            continue;
-                        }
-                    }
-                }
-
-                // Qayta continuous focus ga o'tish
-                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                    await videoTrack.applyConstraints({
-                        advanced: [{ focusMode: "continuous" }]
-                    });
-                }
-
-                setTimeout(() => {
-                    focusBtn.classList.remove('active');
-                }, 1000);
-
-            } catch (err) {
-                console.error("Manual focus xatosi:", err);
-                document.getElementById('focusBtn').classList.remove('active');
-            }
-        }
-
-        // Scan success
-        function onScanSuccess(decodedText) {
-            if (scannedData || !isScanning) return;
-            
-            scannedData = decodedText;
-            isScanning = false;
-            
-            console.log("QR kod topildi:", decodedText);
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
-
-            document.getElementById('resultContent').textContent = decodedText;
-            document.getElementById('resultModal').classList.add('show');
-            
-            if (html5Qrcode) {
-                html5Qrcode.stop().catch(e => console.log(e));
-            }
-            
-            if (autoFocusInterval) {
-                clearInterval(autoFocusInterval);
-            }
-        }
-
-        function onScanError(error) {
-            // Faqat muhim xatolarni ko'rsatish
-            if (error && !error.includes("NotFoundException")) {
-                console.log("Scan error:", error);
-            }
-        }
-
-        // Zoom in
-        async function zoomIn() {
-            if (currentZoom >= maxZoom) return;
-            
-            currentZoom = Math.min(maxZoom, currentZoom + 0.3);
-            await applyZoom();
-            updateZoomUI();
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
-        }
-
-        // Zoom out
-        async function zoomOut() {
-            if (currentZoom <= minZoom) return;
-            
-            currentZoom = Math.max(minZoom, currentZoom - 0.3);
-            await applyZoom();
-            updateZoomUI();
-            
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
-        }
-
-        // Zoom qo'llash
-        async function applyZoom() {
-            const videoElement = document.querySelector('#reader video');
-            if (!videoElement) return;
-
-            if (videoTrack) {
-                try {
-                    const capabilities = videoTrack.getCapabilities();
-                    
-                    if (capabilities.zoom) {
-                        // Hardware zoom
-                        await videoTrack.applyConstraints({
-                            advanced: [{ 
-                                zoom: currentZoom
-                            }]
-                        });
-                        console.log("Hardware zoom:", currentZoom);
-                        return;
-                    }
-                } catch (err) {
-                    console.log("Hardware zoom xatosi:", err);
-                }
-            }
-            
-            // CSS zoom fallback
-            videoElement.style.transform = `scale(${currentZoom})`;
-            videoElement.style.transformOrigin = 'center center';
-            console.log("CSS zoom:", currentZoom);
-        }
-
-        // Zoom UI
-        function updateZoomUI() {
-            document.getElementById('zoomText').textContent = currentZoom.toFixed(1) + 'x';
-        }
-
-        // Chiroq
-        async function toggleTorch() {
-            if (!videoTrack) return;
-
-            try {
-                const capabilities = videoTrack.getCapabilities();
-                
-                if (!capabilities.torch) {
-                    alert("Ushbu qurilmada chiroq qo'llab-quvvatlanmaydi");
-                    return;
-                }
-
-                torchEnabled = !torchEnabled;
-                await videoTrack.applyConstraints({
-                    advanced: [{ torch: torchEnabled }]
-                });
-
-                const btn = document.getElementById('torchBtn');
-                if (torchEnabled) {
-                    btn.classList.add('active');
-                    btn.textContent = '💡';
-                } else {
-                    btn.classList.remove('active');
-                    btn.textContent = '🔦';
-                }
-
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.impactOccurred('light');
-                }
-            } catch (err) {
-                console.error("Chiroq xatosi:", err);
-            }
-        }
-
-        // Botga yuborish
-        function sendToBot() {
-            if (scannedData) {
-                tg.sendData(scannedData);
-                tg.close();
-            }
-        }
-
-        // Qayta skanerlash
-        function scanAgain() {
-            scannedData = null;
-            document.getElementById('resultModal').classList.remove('show');
-            document.getElementById('loading').style.display = 'block';
-            
-            setTimeout(() => {
-                if (html5Qrcode) {
-                    html5Qrcode.stop().catch(() => {});
-                }
-                if (autoFocusInterval) {
-                    clearInterval(autoFocusInterval);
-                }
-                startCamera();
-            }, 500);
-        }
-
-        // Yopish
-        function closeScanner() {
-            isScanning = false;
-            if (html5Qrcode) {
-                html5Qrcode.stop().catch(() => {});
-            }
-            if (autoFocusInterval) {
-                clearInterval(autoFocusInterval);
-            }
-            tg.close();
-        }
-
-        // Pinch zoom
-        let initialDistance = null;
-        let initialZoom = 1.0;
-
-        document.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                initialDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                initialZoom = currentZoom;
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchmove', async (e) => {
-            if (e.touches.length === 2 && initialDistance) {
-                e.preventDefault();
-                const currentDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                
-                const scale = currentDistance / initialDistance;
-                const newZoom = Math.max(minZoom, Math.min(maxZoom, initialZoom * scale));
-                
-                if (Math.abs(newZoom - currentZoom) > 0.1) {
-                    currentZoom = newZoom;
-                    await applyZoom();
-                    updateZoomUI();
-                }
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchend', () => {
-            initialDistance = null;
+        // Elementlarni tanlab olish
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const imagePreview = document.getElementById('imagePreview');
+        const cameraPreview = document.getElementById('cameraPreview');
+        const qrCanvas = document.getElementById('qrCanvas');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const decodeBtn = document.getElementById('decodeBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultBox = document.getElementById('resultBox');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const camZoomSlider = document.getElementById('camZoomSlider');
+        const camZoomInBtn = document.getElementById('camZoomInBtn');
+        const camZoomOutBtn = document.getElementById('camZoomOutBtn');
+        const brightnessBtn = document.getElementById('brightnessBtn');
+        const contrastBtn = document.getElementById('contrastBtn');
+        const sharpenBtn = document.getElementById('sharpenBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        let stream = null;
+        let originalImage = null;
+        let currentZoom = 100;
+        let camCurrentZoom = 100;
+        
+        // Fayl yuklash funksiyalari
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
         });
-
-        // Boshlash
-        window.addEventListener('load', () => {
-            setTimeout(startCamera, 500);
+        
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                    originalImage = new Image();
+                    originalImage.src = e.target.result;
+                    decodeBtn.disabled = false;
+                    resetZoom();
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Zoom funksiyalari
+        function updateZoom() {
+            imagePreview.style.transform = `scale(${currentZoom / 100})`;
+            zoomSlider.value = currentZoom;
+        }
+        
+        function resetZoom() {
+            currentZoom = 100;
+            updateZoom();
+        }
+        
+        zoomInBtn.addEventListener('click', () => {
+            if (currentZoom < 300) {
+                currentZoom += 10;
+                updateZoom();
+            }
+        });
+        
+        zoomOutBtn.addEventListener('click', () => {
+            if (currentZoom > 10) {
+                currentZoom -= 10;
+                updateZoom();
+            }
+        });
+        
+        zoomSlider.addEventListener('input', () => {
+            currentZoom = parseInt(zoomSlider.value);
+            updateZoom();
+        });
+        
+        // Kamera zoom funksiyalari
+        function updateCamZoom() {
+            cameraPreview.style.transform = `scale(${camCurrentZoom / 100})`;
+            camZoomSlider.value = camCurrentZoom;
+        }
+        
+        camZoomInBtn.addEventListener('click', () => {
+            if (camCurrentZoom < 300) {
+                camCurrentZoom += 10;
+                updateCamZoom();
+            }
+        });
+        
+        camZoomOutBtn.addEventListener('click', () => {
+            if (camCurrentZoom > 10) {
+                camCurrentZoom -= 10;
+                updateCamZoom();
+            }
+        });
+        
+        camZoomSlider.addEventListener('input', () => {
+            camCurrentZoom = parseInt(camZoomSlider.value);
+            updateCamZoom();
+        });
+        
+        // Kamera funksiyalari
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                
+                cameraPreview.srcObject = stream;
+                cameraPreview.classList.remove('hidden');
+                startCameraBtn.disabled = true;
+                captureBtn.disabled = false;
+                stopCameraBtn.disabled = false;
+                
+                // Kamerani ishga tushirgach, avtomatik ravishda QR kodni skaner qilish
+                scanQRFromCamera();
+            } catch (err) {
+                console.error("Kamerani ochishda xatolik: ", err);
+                resultBox.textContent = "Kamerani ochishda xatolik yuz berdi. Iltimos, kameraga ruxsat bering.";
+            }
+        });
+        
+        stopCameraBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                cameraPreview.classList.add('hidden');
+                startCameraBtn.disabled = false;
+                captureBtn.disabled = true;
+                stopCameraBtn.disabled = true;
+            }
+        });
+        
+        // Rasmni olish funksiyasi
+        captureBtn.addEventListener('click', () => {
+            const context = qrCanvas.getContext('2d');
+            qrCanvas.width = cameraPreview.videoWidth;
+            qrCanvas.height = cameraPreview.videoHeight;
+            context.drawImage(cameraPreview, 0, 0, qrCanvas.width, qrCanvas.height);
+            
+            // Olingan rasmni ko'rsatish
+            imagePreview.src = qrCanvas.toDataURL();
+            imagePreview.classList.remove('hidden');
+            originalImage = new Image();
+            originalImage.src = qrCanvas.toDataURL();
+            decodeBtn.disabled = false;
+            resetZoom();
+        });
+        
+        // QR kodni o'qish funksiyasi
+        decodeBtn.addEventListener('click', () => {
+            decodeQRCode(imagePreview);
+        });
+        
+        function decodeQRCode(imageElement) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = imageElement.naturalWidth || imageElement.width;
+            canvas.height = imageElement.naturalHeight || imageElement.height;
+            
+            context.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                resultBox.textContent = code.data;
+                copyBtn.disabled = false;
+            } else {
+                resultBox.textContent = "QR kod topilmadi. Iltimos, rasmni yaqinlashtiring yoki tiniqlashtiring.";
+                copyBtn.disabled = true;
+            }
+        }
+        
+        // Kamera orqali QR kodni avtomatik skaner qilish
+        function scanQRFromCamera() {
+            if (!cameraPreview.srcObject) return;
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = cameraPreview.videoWidth;
+            canvas.height = cameraPreview.videoHeight;
+            
+            context.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                resultBox.textContent = code.data;
+                copyBtn.disabled = false;
+                
+                // QR kod topilganda, rasmni avtomatik olish va ko'rsatish
+                imagePreview.src = canvas.toDataURL();
+                imagePreview.classList.remove('hidden');
+                originalImage = new Image();
+                originalImage.src = canvas.toDataURL();
+                decodeBtn.disabled = false;
+                resetZoom();
+            }
+            
+            // Agar kamera yoqilgan bo'lsa, skanerlashni davom ettirish
+            if (cameraPreview.srcObject) {
+                requestAnimationFrame(scanQRFromCamera);
+            }
+        }
+        
+        // Rasmni tiniqlashtirish funksiyalari
+        brightnessBtn.addEventListener('click', () => {
+            applyFilter('brightness', 1.5);
+        });
+        
+        contrastBtn.addEventListener('click', () => {
+            applyFilter('contrast', 1.5);
+        });
+        
+        sharpenBtn.addEventListener('click', () => {
+            applySharpenFilter();
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            if (originalImage) {
+                imagePreview.src = originalImage.src;
+            }
+        });
+        
+        function applyFilter(filter, value) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = imagePreview.naturalWidth || imagePreview.width;
+            canvas.height = imagePreview.naturalHeight || imagePreview.height;
+            
+            context.filter = `${filter}(${value})`;
+            context.drawImage(imagePreview, 0, 0, canvas.width, canvas.height);
+            
+            imagePreview.src = canvas.toDataURL();
+        }
+        
+        function applySharpenFilter() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = imagePreview.naturalWidth || imagePreview.width;
+            canvas.height = imagePreview.naturalHeight || imagePreview.height;
+            
+            context.drawImage(imagePreview, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            
+            // Oddiy sharpen filtr
+            for (let y = 1; y < height - 1; y += 1) {
+                for (let x = 1; x < width - 1; x += 1) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Sharpen matritsasi
+                    const sharpen = [
+                        [0, -1, 0],
+                        [-1, 5, -1],
+                        [0, -1, 0]
+                    ];
+                    
+                    let r = 0, g = 0, b = 0;
+                    
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const kidx = ((y + ky) * width + (x + kx)) * 4;
+                            const weight = sharpen[ky + 1][kx + 1];
+                            
+                            r += data[kidx] * weight;
+                            g += data[kidx + 1] * weight;
+                            b += data[kidx + 2] * weight;
+                        }
+                    }
+                    
+                    data[idx] = Math.max(0, Math.min(255, r));
+                    data[idx + 1] = Math.max(0, Math.min(255, g));
+                    data[idx + 2] = Math.max(0, Math.min(255, b));
+                }
+            }
+            
+            context.putImageData(imageData, 0, 0);
+            imagePreview.src = canvas.toDataURL();
+        }
+        
+        // Qolgan funksiyalar
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(resultBox.textContent)
+                .then(() => {
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Nusxa olindi!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Nusxa olishda xatolik: ', err);
+                });
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            resultBox.textContent = "QR kod ma'lumoti bu yerda paydo bo'ladi...";
+            imagePreview.classList.add('hidden');
+            fileInput.value = '';
+            decodeBtn.disabled = true;
+            copyBtn.disabled = true;
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                cameraPreview.classList.add('hidden');
+                startCameraBtn.disabled = false;
+                captureBtn.disabled = true;
+                stopCameraBtn.disabled = true;
+            }
+        });
+        
+        // Drayv va tush bilan fayl tortib olish
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = 'rgba(255, 255, 255, 0.2)';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = '';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '';
+            
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                fileInput.files = e.dataTransfer.files;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                    originalImage = new Image();
+                    originalImage.src = e.target.result;
+                    decodeBtn.disabled = false;
+                    resetZoom();
+                }
+                
+                reader.readAsDataURL(e.dataTransfer.files[0]);
+            }
         });
     </script>
 </body>
