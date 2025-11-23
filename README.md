@@ -3,338 +3,421 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mini App — Foto → QR</title>
+  <title>Mini App — Avto QR Scanner + Editor</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto; margin:12px; color:#111}
-    h1{font-size:18px;margin-bottom:6px}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    #viewer{width:320px;height:420px;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:#fafafa}
-    #photoCanvas{transform-origin:center center; touch-action:none; background:#fff}
-    .controls{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
-    button{padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer}
+    :root{--bg:#fff;--muted:#666;--accent:#0a84ff}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto; margin:10px; background:var(--bg); color:#111}
+    h1{font-size:18px;margin:6px 0}
+    .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    #viewer{width:340px;height:420px;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:#000}
+    video{width:100%;height:100%;object-fit:cover}
+    #scanOverlay{position:absolute;inset:0;pointer-events:none}
+    .centerBox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:2px dashed rgba(255,255,255,0.25);box-sizing:border-box;border-radius:8px}
+    #controlsBar{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     input[type="range"]{width:180px}
-    #qrholder{margin-top:12px}
+    button{padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer}
+    #resultPanel{position:fixed;right:18px;top:18px;background:#fff;border:1px solid #ddd;padding:10px;border-radius:8px;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,0.08);}
+    #qrPreview{width:240px;height:240px;display:block;margin-bottom:8px;object-fit:contain;filter:brightness(1.35) contrast(1.15);border-radius:6px;background:#fff}
+    .small{font-size:13px;color:var(--muted)}
     #loader{display:none}
-    .small{font-size:12px;color:#555}
+    #manualTools{margin-top:12px}
+    .hint{font-size:13px;color:var(--muted);margin-top:8px}
+    /* detection box lines */
+    .line{position:absolute;background:lime;opacity:0.9}
   </style>
 </head>
 <body>
-  <h1>Mini-app: rasm oling/sozlang → QR yarating</h1>
+  <h1>Mini-app: avtomatik QR skaner + rasm → QR</h1>
 
-  <div class="row">
-    <input id="fileInput" type="file" accept="image/*" />
-    <button id="camBtn">Kameradan olish</button>
-    <button id="autoFaceBtn">Auto-Face (markaz)</button>
-    <button id="cropBtn">Crop va Saqlash</button>
+  <div id="viewer">
+    <video id="video" playsinline autoplay muted></video>
+    <div id="scanOverlay">
+      <div class="centerBox"></div>
+      <!-- dynamic drawing (canvas overlay) -->
+      <canvas id="overlayCanvas" width="340" height="420" style="position:absolute;inset:0;pointer-events:none"></canvas>
+    </div>
   </div>
 
-  <div id="viewer" style="margin-top:10px;">
-    <canvas id="photoCanvas" width="320" height="420"></canvas>
-    <video id="video" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover"></video>
-  </div>
-
-  <div class="controls">
+  <div id="controlsBar" class="controls">
     <label class="small">Zoom</label>
-    <input id="zoomRange" type="range" min="0.5" max="3" step="0.01" value="1">
-    <label class="small">Rotate</label>
-    <button id="rotLeft">⟲</button>
-    <button id="rotRight">⟳</button>
-    <label style="margin-left:8px;">
-      <input id="centerToggle" type="checkbox" checked/> Fit to view
-    </label>
+    <input id="zoomRange" type="range" min="1" max="4" step="0.01" value="1">
+    <label class="small">Torch</label>
+    <button id="toggleTorch">Torch: O'ch</button>
+    <label class="small">Auto-focus</label>
+    <button id="focusBtn">Focus sinov</button>
+    <button id="stopBtn">Kamerani to'xtat</button>
+    <span id="loader" class="small">Skanner yuklanmoqda...</span>
   </div>
 
-  <div style="margin-top:10px;">
-    <input id="qrText" placeholder="QR uchun matn yoki URL (masalan: https://example.com)" style="width:60%;" />
-    <label style="margin-left:8px"><input id="encodeImage" type="checkbox" /> Rasmni base64 sifatida QRga joylash (kattaligi muhim)</label>
-    <button id="genQrBtn">QR yarat</button>
+  <div class="hint">Ishga tushganda kamera avtomatik ochiladi va atrofdagi QRlarni qidiradi. Agar telefon zoom yoki torch qo'llab-quvvatlasa, zoom/torch ishlaydi.</div>
+
+  <!-- Result panel (ko'rinadi QR topilganda) -->
+  <div id="resultPanel" style="display:none;">
+    <img id="qrPreview" src="" alt="QR snapshot"/>
+    <div><strong>Decoded:</strong></div>
+    <div id="decodedText" class="small" style="word-break:break-word"></div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button id="copyBtn">Nusxa olish</button>
+      <button id="openBtn">Ochish (URL bo'lsa)</button>
+      <button id="resumeBtn">Yana skan qilish</button>
+    </div>
   </div>
 
-  <div id="qrholder"></div>
-  <div id="loader">Model yuklanmoqda, iltimos bir necha soniya kuting...</div>
+  <hr style="margin:12px 0">
 
-  <!-- kutubxonalar: face-api va qrcodejs -->
-  <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- eski rasm→QR vositalari (iste'fo uchun) -->
+  <div id="manualTools">
+    <div class="controls">
+      <input id="fileInput" type="file" accept="image/*" />
+      <button id="genFromCanvas">Hoziroq QR yarat (hozirgi snapshot)</button>
+      <input id="qrText" placeholder="QR uchun matn yoki URL" style="width:46%" />
+      <label><input id="encodeImage" type="checkbox" /> Rasmni base64 sifatida QRga joylash</label>
+      <button id="genQrBtn">QR yarat</button>
+    </div>
+    <div id="qrholder" style="margin-top:8px"></div>
+  </div>
+
+  <!-- kutubxonalar -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
   <script>
-    // --- Telegram WebApp init (agar WebApp ichida ochilsa) ---
-    try {
-      if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.init();
-      }
-    } catch(e){ console.log('tg init err', e) }
-
-    // --- DOM refs ---
-    const fileInput = document.getElementById('fileInput');
-    const camBtn = document.getElementById('camBtn');
+    // DOM
     const video = document.getElementById('video');
-    const canvas = document.getElementById('photoCanvas');
-    const ctx = canvas.getContext('2d');
+    const overlayCanvas = document.getElementById('overlayCanvas');
+    const octx = overlayCanvas.getContext('2d');
     const zoomRange = document.getElementById('zoomRange');
-    const rotLeft = document.getElementById('rotLeft');
-    const rotRight = document.getElementById('rotRight');
-    const autoFaceBtn = document.getElementById('autoFaceBtn');
-    const cropBtn = document.getElementById('cropBtn');
+    const toggleTorchBtn = document.getElementById('toggleTorch');
+    const focusBtn = document.getElementById('focusBtn');
+    const resultPanel = document.getElementById('resultPanel');
+    const qrPreview = document.getElementById('qrPreview');
+    const decodedText = document.getElementById('decodedText');
+    const copyBtn = document.getElementById('copyBtn');
+    const openBtn = document.getElementById('openBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const loader = document.getElementById('loader');
+    const stopBtn = document.getElementById('stopBtn');
+
+    // manual tools
+    const fileInput = document.getElementById('fileInput');
     const genQrBtn = document.getElementById('genQrBtn');
-    const qrHolder = document.getElementById('qrholder');
+    const qrholder = document.getElementById('qrholder');
     const qrText = document.getElementById('qrText');
     const encodeImage = document.getElementById('encodeImage');
-    const loader = document.getElementById('loader');
-    const centerToggle = document.getElementById('centerToggle');
+    const genFromCanvasBtn = document.getElementById('genFromCanvas');
 
-    // state
-    let img = new Image();
-    let scale = 1;
-    let rotation = 0; // degrees
-    let offsetX = 0, offsetY = 0;
-    let isPanning = false, startPan = null;
     let stream = null;
+    let scanning = false;
+    let scanLoopId = null;
+    let track = null;
+    let torchOn = false;
+    let useHardwareZoom = false;
+    let lastDetected = null;
 
-    // draw function
-    function redraw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if (!img.src) {
-        ctx.fillStyle = '#f5f5f5';
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = '#999';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Rasm yuklanmadi', canvas.width/2, canvas.height/2);
-        return;
+    // start on load
+    window.addEventListener('load', ()=>{ startScanner(); });
+
+    async function startScanner(){
+      loader.style.display='inline';
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+        track = stream.getVideoTracks()[0];
+
+        // attempt to enable continuous focus / exposure for better results
+        try {
+          const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+          const settings = track.getSettings ? track.getSettings() : {};
+          // Focus mode
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+            console.log('Applied continuous focus');
+          }
+          // exposure mode
+          if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) {
+            await track.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] });
+            console.log('Applied continuous exposure');
+          }
+          // zoom
+          if (capabilities.zoom) {
+            useHardwareZoom = true;
+            zoomRange.min = capabilities.zoom.min || 1;
+            zoomRange.max = capabilities.zoom.max || 4;
+            zoomRange.step = capabilities.zoom.step || 0.01;
+            zoomRange.value = settings.zoom || capabilities.zoom.min || 1;
+          } else {
+            // keep default slidable digital zoom range
+            useHardwareZoom = false;
+            zoomRange.min = 1; zoomRange.max = 3; zoomRange.step = 0.01; zoomRange.value = 1;
+          }
+        } catch (e){
+          console.warn('Capability set failed', e);
+        }
+
+        scanning = true;
+        scanLoop();
+      } catch (err) {
+        alert('Kamera ochilmadi: '+err.message);
+        console.error(err);
+      } finally {
+        loader.style.display='none';
       }
-      // save + center transform
-      ctx.save();
-      ctx.translate(canvas.width/2 + offsetX, canvas.height/2 + offsetY);
-      ctx.rotate(rotation * Math.PI/180);
-      ctx.scale(scale, scale);
-
-      // choose image draw size to preserve aspect
-      const iw = img.width, ih = img.height;
-      const ratio = Math.min( (canvas.width*0.9)/iw, (canvas.height*0.9)/ih );
-      const drawW = iw * ratio;
-      const drawH = ih * ratio;
-      ctx.drawImage(img, -drawW/2, -drawH/2, drawW, drawH);
-      ctx.restore();
     }
 
-    // load file
+    function stopScanner(){
+      scanning = false;
+      if (scanLoopId) cancelAnimationFrame(scanLoopId);
+      if (stream) {
+        stream.getTracks().forEach(t=>t.stop());
+        stream = null; track = null;
+      }
+      video.pause();
+      video.srcObject = null;
+    }
+
+    stopBtn.addEventListener('click', ()=>{ stopScanner(); });
+
+    // zoom handling
+    zoomRange.addEventListener('input', async (e)=>{
+      const val = parseFloat(e.target.value);
+      if (track && useHardwareZoom) {
+        try {
+          await track.applyConstraints({ advanced: [{ zoom: val }] });
+        } catch(e){ console.warn('hardware zoom failed', e); }
+      } else {
+        // digital zoom via CSS transform
+        video.style.transform = `scale(${val})`;
+      }
+    });
+
+    // torch
+    toggleTorchBtn.addEventListener('click', async ()=>{
+      if (!track) return;
+      const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+      if (!capabilities.torch) {
+        alert('Ushbu qurilmada torch (flesh) qoʻllab-quvvatlanmaydi.');
+        return;
+      }
+      torchOn = !torchOn;
+      try {
+        await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+        toggleTorchBtn.textContent = `Torch: ${torchOn ? "Yo'qildi" : "O'ch"}`;
+      } catch(e){
+        console.warn('Torch control failed', e);
+      }
+    });
+
+    // manual focus try
+    focusBtn.addEventListener('click', async ()=>{
+      if (!track) return;
+      try {
+        const caps = track.getCapabilities();
+        if (caps.focusDistance) {
+          // set focus to mid-range to try
+          const min = caps.focusDistance.min || 0;
+          const max = caps.focusDistance.max || 1;
+          const mid = (min + max) / 2;
+          await track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: mid }]});
+          alert('Focus sozlandi (sinov).');
+        } else if (caps.focusMode && caps.focusMode.includes('continuous')) {
+          await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }]});
+          alert('Continuous focus yoqildi.');
+        } else {
+          alert('Focus boshqaruvi qurilmangizda cheklangan.');
+        }
+      } catch (e){ console.warn(e); alert('Focus sozlashda xatolik.'); }
+    });
+
+    // scanning loop
+    const scanCanvas = document.createElement('canvas');
+    const sctx = scanCanvas.getContext('2d');
+
+    async function scanLoop(){
+      if (!scanning) return;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // set canvas to video size
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const vwScaled = overlayCanvas.width = 340;
+        const vhScaled = overlayCanvas.height = 420;
+        scanCanvas.width = vw;
+        scanCanvas.height = vh;
+        // draw current frame to scan canvas
+        sctx.drawImage(video, 0, 0, vw, vh);
+        const imageData = sctx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+
+        // clear overlay
+        octx.clearRect(0,0,overlayCanvas.width, overlayCanvas.height);
+
+        if (code) {
+          // draw detection box scaled to overlay size
+          // compute scale between scanCanvas and overlayCanvas
+          const scaleX = overlayCanvas.width / scanCanvas.width;
+          const scaleY = overlayCanvas.height / scanCanvas.height;
+          drawLine(code.location.topLeftCorner, code.location.topRightCorner, scaleX, scaleY);
+          drawLine(code.location.topRightCorner, code.location.bottomRightCorner, scaleX, scaleY);
+          drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, scaleX, scaleY);
+          drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, scaleX, scaleY);
+
+          // take snapshot of the QR area for preview (crop from scanCanvas)
+          const minX = Math.max(0, Math.floor(Math.min(code.location.topLeftCorner.x, code.location.bottomLeftCorner.x, code.location.topRightCorner.x, code.location.bottomRightCorner.x)));
+          const minY = Math.max(0, Math.floor(Math.min(code.location.topLeftCorner.y, code.location.topRightCorner.y, code.location.bottomLeftCorner.y, code.location.bottomRightCorner.y)));
+          const maxX = Math.min(scanCanvas.width, Math.ceil(Math.max(code.location.topLeftCorner.x, code.location.bottomLeftCorner.x, code.location.topRightCorner.x, code.location.bottomRightCorner.x)));
+          const maxY = Math.min(scanCanvas.height, Math.ceil(Math.max(code.location.topLeftCorner.y, code.location.topRightCorner.y, code.location.bottomLeftCorner.y, code.location.bottomRightCorner.y)));
+          const w = maxX - minX, h = maxY - minY;
+          // create temporary canvas to crop and scale for preview
+          const cropCanvas = document.createElement('canvas');
+          cropCanvas.width = w; cropCanvas.height = h;
+          cropCanvas.getContext('2d').putImageData(sctx.getImageData(minX, minY, w, h), 0, 0);
+          // upscale for preview
+          const previewCanvas = document.createElement('canvas');
+          const maxPreview = 600;
+          const scaleUp = Math.min(maxPreview / w, maxPreview / h, 3);
+          previewCanvas.width = Math.round(w * scaleUp);
+          previewCanvas.height = Math.round(h * scaleUp);
+          const pctx = previewCanvas.getContext('2d');
+          // apply simple brightness/contrast by drawing onto white then blending (we'll use CSS filter later)
+          pctx.drawImage(cropCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+
+          // show result panel with brightened preview and decoded text
+          qrPreview.src = previewCanvas.toDataURL('image/png');
+          decodedText.textContent = code.data;
+          resultPanel.style.display = 'block';
+
+          // stop scanning to avoid repeated triggers; user can resume
+          scanning = false;
+          if (scanLoopId) cancelAnimationFrame(scanLoopId);
+          lastDetected = code.data;
+        } else {
+          // draw center box hint
+          octx.strokeStyle = 'rgba(255,255,255,0.35)';
+          octx.lineWidth = 2;
+          octx.strokeRect((overlayCanvas.width-220)/2, (overlayCanvas.height-220)/2, 220, 220);
+        }
+      }
+      scanLoopId = requestAnimationFrame(scanLoop);
+    }
+
+    function drawLine(p1, p2, scaleX, scaleY){
+      octx.strokeStyle = 'lime';
+      octx.lineWidth = 4;
+      octx.beginPath();
+      octx.moveTo(p1.x * scaleX, p1.y * scaleY);
+      octx.lineTo(p2.x * scaleX, p2.y * scaleY);
+      octx.stroke();
+    }
+
+    // resume scanning
+    resumeBtn.addEventListener('click', ()=>{
+      resultPanel.style.display = 'none';
+      lastDetected = null;
+      scanning = true;
+      scanLoop();
+    });
+
+    copyBtn.addEventListener('click', async ()=>{
+      const text = decodedText.textContent || '';
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('Nusxa olindi');
+      } catch(e){
+        alert('Clipboardga yozishda xatolik');
+      }
+    });
+
+    openBtn.addEventListener('click', ()=>{
+      const txt = decodedText.textContent || '';
+      if (!txt) return;
+      try {
+        // if looks like URL, open in new tab
+        const url = new URL(txt);
+        window.open(url.toString(), '_blank');
+      } catch(e){
+        alert('Bu URL emas: ' + txt);
+      }
+    });
+
+    // manual snapshot -> QR generation (from current video frame)
+    genFromCanvasBtn.addEventListener('click', ()=>{
+      if (!video || video.readyState < 2) { alert('Kamera tayyor emas'); return; }
+      const c = document.createElement('canvas');
+      c.width = video.videoWidth; c.height = video.videoHeight;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(video, 0, 0, c.width, c.height);
+      const dataUrl = c.toDataURL('image/jpeg', 0.9);
+      createQR(dataUrl);
+    });
+
+    // file input -> show on canvas and optionally make QR
     fileInput.addEventListener('change', (e)=>{
       const f = e.target.files && e.target.files[0];
       if (!f) return;
-      const url = URL.createObjectURL(f);
-      stopCamera();
-      img = new Image();
+      const img = new Image();
       img.onload = ()=> {
-        scale = 1; rotation = 0; offsetX=0; offsetY=0;
-        redraw();
+        // draw image on hidden canvas to ensure proper dataURL
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        c.getContext('2d').drawImage(img,0,0);
+        createQR(c.toDataURL('image/jpeg', 0.85));
       };
-      img.src = url;
+      img.src = URL.createObjectURL(f);
     });
 
-    // camera
-    camBtn.addEventListener('click', async ()=>{
-      try {
-        stopCamera();
-        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
-        video.srcObject = stream;
-        video.play();
-        video.style.display = 'block';
-        // show live and capture after click
-        camBtn.textContent = 'Yozib olish (bosish rasm olish uchun)';
-        camBtn.onclick = () => {
-          // draw current video frame to canvas (as image)
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          // convert to image
-          const data = canvas.toDataURL('image/jpeg');
-          img = new Image();
-          img.onload = ()=> { video.style.display='none'; stopCamera(); redraw(); camBtn.textContent='Kameradan olish'; camBtn.onclick = cameraDefault; }
-          img.src = data;
-        };
-      } catch(err){ alert('Kamera ochilmadi: '+err.message); }
-    });
-    function cameraDefault(){ /* placeholder */ }
-
-    function stopCamera(){
-      if (stream){
-        stream.getTracks().forEach(t=>t.stop());
-        stream = null;
-      }
-      video.pause(); video.srcObject = null;
-      video.style.display='none';
-      camBtn.textContent='Kameradan olish';
-      camBtn.onclick = cameraDefault;
-    }
-
-    // zoom
-    zoomRange.addEventListener('input', (e)=>{
-      scale = parseFloat(e.target.value);
-      redraw();
-    });
-
-    // rotate
-    rotLeft.addEventListener('click', ()=>{ rotation = (rotation-90)%360; redraw(); });
-    rotRight.addEventListener('click', ()=>{ rotation = (rotation+90)%360; redraw(); });
-
-    // panning (mouse / touch)
-    canvas.addEventListener('pointerdown', (e)=>{
-      isPanning = true;
-      startPan = {x:e.clientX, y:e.clientY};
-      canvas.setPointerCapture(e.pointerId);
-    });
-    canvas.addEventListener('pointermove', (e)=>{
-      if (!isPanning) return;
-      const dx = e.clientX - startPan.x;
-      const dy = e.clientY - startPan.y;
-      offsetX += dx; offsetY += dy;
-      startPan = {x:e.clientX, y:e.clientY};
-      redraw();
-    });
-    canvas.addEventListener('pointerup', (e)=>{ isPanning=false; canvas.releasePointerCapture(e.pointerId); });
-
-    // face-api load models (tiny face detector)
-    async function loadModels(){
-      loader.style.display='block';
-      try {
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-        // use CDN models host — smaller tiny face detector
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL).catch(()=>{ /* fallback */});
-      } catch(e){ console.warn('model load err', e) }
-      loader.style.display='none';
-    }
-    loadModels();
-
-    // auto-face: detect and center
-    autoFaceBtn.addEventListener('click', async ()=>{
-      if (!img.src) { alert('Avvalo rasm yuklang.'); return; }
-      loader.style.display='block';
-      // draw current state into a tmp canvas and run detection
-      const tmp = document.createElement('canvas');
-      tmp.width = img.width; tmp.height = img.height;
-      const tctx = tmp.getContext('2d');
-      tctx.drawImage(img,0,0);
-      // run tiny face detector
-      const detections = await faceapi.detectAllFaces(tmp, new faceapi.TinyFaceDetectorOptions());
-      loader.style.display='none';
-      if (!detections || detections.length===0){ alert('Yuz topilmadi.'); return; }
-      // pick largest box
-      const box = detections.reduce((a,b)=> (a.box.width*a.box.height > b.box.width*b.box.height)?a:b).box;
-      // compute face center in image coords
-      const faceCx = box.x + box.width/2;
-      const faceCy = box.y + box.height/2;
-      // Map image coords to canvas transform to center face
-      // We used drawW/drawH ratio in redraw; reuse logic to compute offsets
-      const iw = img.width, ih = img.height;
-      const ratio = Math.min( (canvas.width*0.9)/iw, (canvas.height*0.9)/ih );
-      const drawW = iw * ratio;
-      const drawH = ih * ratio;
-      // After scaling by 'scale', the pixel of face on canvas (before rotation) is:
-      const sx = (faceCx - iw/2) * ratio * scale;
-      const sy = (faceCy - ih/2) * ratio * scale;
-      // To put this point at canvas center, set offset opposite of sx,sy
-      offsetX = -sx;
-      offsetY = -sy;
-      // optionally reset rotation
-      if (centerToggle.checked) rotation = 0;
-      redraw();
-    });
-
-    // crop to current view and replace image with cropped image
-    cropBtn.addEventListener('click', ()=>{
-      // create temporary canvas of visible area and draw current transformed image there
-      const tmp = document.createElement('canvas');
-      tmp.width = canvas.width; tmp.height = canvas.height;
-      const tctx = tmp.getContext('2d');
-      // draw background white
-      tctx.fillStyle = '#fff'; tctx.fillRect(0,0,tmp.width,tmp.height);
-
-      // replicate the same transform as redraw
-      tctx.save();
-      tctx.translate(tmp.width/2 + offsetX, tmp.height/2 + offsetY);
-      tctx.rotate(rotation * Math.PI/180);
-      tctx.scale(scale, scale);
-
-      const iw = img.width, ih = img.height;
-      const ratio = Math.min( (canvas.width*0.9)/iw, (canvas.height*0.9)/ih );
-      const drawW = iw * ratio;
-      const drawH = ih * ratio;
-      tctx.drawImage(img, -drawW/2, -drawH/2, drawW, drawH);
-      tctx.restore();
-
-      // replace image with cropped
-      const data = tmp.toDataURL('image/jpeg', 0.9);
-      img = new Image();
-      img.onload = ()=> {
-        scale = 1; rotation = 0; offsetX=0; offsetY=0;
-        redraw();
-      };
-      img.src = data;
-    });
-
-    // generate QR
-    genQrBtn.addEventListener('click', ()=>{
-      qrHolder.innerHTML = '';
-      const text = (qrText.value || '').trim();
-      const doImage = encodeImage.checked;
-
-      if (!text && !doImage) { alert('QR uchun matn yoki "Rasmni base64 sifatida" ni tanlang.'); return; }
-
-      if (doImage) {
-        // small size check: convert current canvas to compressed dataURL and use as payload
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        // check length (base64 string length)
-        if (dataUrl.length > 2000) {
-          // warn user: large
-          if (!confirm('Rasm juda katta bo‘lishi mumkin va QR o‘qilmasligi mumkin. Davom etilsinmi?')) return;
-        }
-        createQR(dataUrl);
-      } else {
-        createQR(text);
-      }
-    });
-
+    // QR creation (with brightened preview)
     function createQR(payload){
-      qrHolder.innerHTML = '';
+      qrholder.innerHTML = '';
       const qdiv = document.createElement('div');
       qdiv.id = 'qrcode';
-      qrHolder.appendChild(qdiv);
+      qdiv.style.filter = 'brightness(1.4) contrast(1.12)';
+      qrholder.appendChild(qdiv);
 
-      // use QRCode library
       try {
         new QRCode(qdiv, {
           text: payload,
-          width: 240,
-          height: 240,
-          correctLevel: QRCode.CorrectLevel.L
+          width: 260,
+          height: 260,
+          correctLevel: QRCode.CorrectLevel.H
         });
       } catch(e){
-        qdiv.innerText = 'QR hosil qilishda xato: '+e;
+        qdiv.innerText = 'QR yaratishda xato: ' + e;
       }
 
-      // add save button
+      // save button
       const saveBtn = document.createElement('button');
       saveBtn.textContent = 'QRni yuklab olish';
       saveBtn.onclick = ()=> {
-        // convert qrcode canvas/svg to image and download
         const qrCanvas = qdiv.querySelector('canvas');
         if (qrCanvas) {
           const a = document.createElement('a');
           a.href = qrCanvas.toDataURL('image/png');
           a.download = 'qr.png';
           a.click();
-        } else {
-          alert('QR topilmadi');
-        }
+        } else alert('QR topilmadi');
       };
-      qrHolder.appendChild(document.createElement('br'));
-      qrHolder.appendChild(saveBtn);
+      qrholder.appendChild(document.createElement('br'));
+      qrholder.appendChild(saveBtn);
     }
 
-    // initial empty redraw
-    redraw();
+    genQrBtn.addEventListener('click', ()=>{
+      const text = (qrText.value || '').trim();
+      if (!text && !encodeImage.checked) { alert('QR uchun matn yoki rasm yuklang / tanlang'); return; }
+      if (encodeImage.checked) {
+        // use currently shown preview or snapshot
+        if (!video || video.readyState < 2) { alert('Kamera tayyor emas'); return; }
+        const c = document.createElement('canvas');
+        c.width = video.videoWidth; c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
+        const dataUrl = c.toDataURL('image/jpeg', 0.7);
+        createQR(dataUrl);
+      } else {
+        createQR(text);
+      }
+    });
 
-    // optional: adapt size on orientation change
-    window.addEventListener('resize', ()=> { redraw(); });
+    // cleanup on unload
+    window.addEventListener('beforeunload', ()=>{ stopScanner(); });
   </script>
 </body>
 </html>
