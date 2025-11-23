@@ -47,11 +47,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .header p {
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-
         .video-container {
             position: relative;
             width: 100%;
@@ -84,8 +79,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 220px;
-            height: 220px;
+            width: 200px;
+            height: 200px;
             border: 3px solid #00ff88;
             border-radius: 15px;
             box-shadow: 
@@ -97,10 +92,10 @@
 
         .scan-lines {
             position: absolute;
-            top: 50%;
+            top: 0;
             left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px;
+            transform: translateX(-50%);
+            width: 200px;
             height: 4px;
             background: linear-gradient(90deg, transparent, #00ff88, transparent);
             animation: scan 2s linear infinite;
@@ -112,9 +107,8 @@
         }
 
         @keyframes scan {
-            0% { top: 50%; }
-            50% { top: 30%; }
-            100% { top: 70%; }
+            0% { top: 0; }
+            100% { top: 200px; }
         }
 
         .controls {
@@ -129,13 +123,9 @@
             margin-bottom: 15px;
         }
 
-        .control-group:last-child {
-            margin-bottom: 0;
-        }
-
         .control-label {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
             font-weight: 600;
@@ -203,18 +193,11 @@
 
         .enhance-option:hover {
             background: rgba(102, 126, 234, 0.2);
-            transform: translateY(-2px);
         }
 
         .enhance-option input {
             width: 18px;
             height: 18px;
-        }
-
-        .enhance-option label {
-            font-size: 14px;
-            color: #2c3e50;
-            cursor: pointer;
         }
 
         .buttons {
@@ -241,7 +224,6 @@
         .btn-primary {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn-primary:hover {
@@ -255,15 +237,9 @@
             border: 2px solid rgba(102, 126, 234, 0.3);
         }
 
-        .btn-secondary:hover {
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-
         .btn-success {
             background: linear-gradient(135deg, #00ff88, #00ccff);
             color: white;
-            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
         }
 
         .status {
@@ -300,14 +276,12 @@
             margin-top: 20px;
             display: none;
             border: 2px solid #00ff88;
-            box-shadow: 0 10px 25px rgba(0, 255, 136, 0.2);
         }
 
         .result h3 {
             color: #2c3e50;
             margin-bottom: 15px;
             text-align: center;
-            font-size: 18px;
         }
 
         .result-text {
@@ -329,34 +303,11 @@
             gap: 10px;
         }
 
-        .sensitivity-indicator {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 5px;
+        .detection-info {
             font-size: 12px;
-            color: #7f8c8d;
-        }
-
-        .level-indicator {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-
-        .level-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ecf0f1;
-            transition: all 0.3s ease;
-        }
-
-        .level-dot.active {
-            background: #00ff88;
-        }
-
-        .level-dot.active.high {
-            background: #ff6b6b;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -364,7 +315,6 @@
     <div class="container">
         <div class="header">
             <h1>Kuchli QR Skaner</h1>
-            <p>Har qanday QR kodni tez va aniq o'qing</p>
         </div>
 
         <div class="video-container">
@@ -382,37 +332,25 @@
         <div class="controls">
             <div class="control-group">
                 <div class="control-label">
-                    Zoom kuchi
+                    Zoom
                     <span id="zoom-level">Normal</span>
                 </div>
-                <input type="range" id="zoom-range" min="1" max="5" step="0.1" value="1">
+                <input type="range" id="zoom-range" min="1" max="10" step="0.5" value="1">
                 <div class="zoom-display">
                     <small>1x</small>
-                    <div class="zoom-value" id="zoom-value">1.0x</div>
-                    <small>5x</small>
+                    <div class="zoom-value" id="zoom-value">1x</div>
+                    <small>10x</small>
                 </div>
             </div>
 
             <div class="control-group">
                 <div class="control-label">
-                    Skanerlash sezgirligi
+                    Sezgirlik
                     <span id="sensitivity-level">Yuqori</span>
                 </div>
                 <input type="range" id="sensitivity-range" min="1" max="10" step="1" value="8">
-                <div class="sensitivity-indicator">
+                <div class="zoom-display">
                     <small>Past</small>
-                    <div class="level-indicator" id="level-indicator">
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                        <div class="level-dot"></div>
-                    </div>
                     <small>Yuqori</small>
                 </div>
             </div>
@@ -423,16 +361,8 @@
                     <label for="auto-enhance">Avto yaxshilash</label>
                 </div>
                 <div class="enhance-option">
-                    <input type="checkbox" id="brightness-enhance" checked>
-                    <label for="brightness-enhance">Yorqinlik</label>
-                </div>
-                <div class="enhance-option">
-                    <input type="checkbox" id="contrast-enhance" checked>
-                    <label for="contrast-enhance">Kontrast</label>
-                </div>
-                <div class="enhance-option">
-                    <input type="checkbox" id="sharpness-enhance">
-                    <label for="sharpness-enhance">Tiniqlik</label>
+                    <input type="checkbox" id="high-quality" checked>
+                    <label for="high-quality">Yuqori sifat</label>
                 </div>
             </div>
         </div>
@@ -458,6 +388,10 @@
                 </button>
             </div>
         </div>
+
+        <div class="detection-info" id="detection-info">
+            Kichik QR kodlarni o'qish uchun zoom qiling
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -476,11 +410,9 @@
         const zoomLevel = document.getElementById('zoom-level');
         const sensitivityRange = document.getElementById('sensitivity-range');
         const sensitivityLevel = document.getElementById('sensitivity-level');
-        const levelIndicator = document.getElementById('level-indicator');
         const autoEnhance = document.getElementById('auto-enhance');
-        const brightnessEnhance = document.getElementById('brightness-enhance');
-        const contrastEnhance = document.getElementById('contrast-enhance');
-        const sharpnessEnhance = document.getElementById('sharpness-enhance');
+        const highQuality = document.getElementById('high-quality');
+        const detectionInfo = document.getElementById('detection-info');
 
         let stream = null;
         let scanning = false;
@@ -488,21 +420,26 @@
         let track = null;
         let currentZoom = 1;
         let sensitivity = 8;
+        let detectionAttempts = 0;
 
-        // Zoom sozlamalari
+        // Zoom sozlamalari - ISHLASHI ANIQLANGAN
         zoomRange.addEventListener('input', function() {
             currentZoom = parseFloat(this.value);
-            zoomValue.textContent = currentZoom.toFixed(1) + 'x';
+            zoomValue.textContent = currentZoom + 'x';
             
             // Zoom darajasiga qarab matn
             if (currentZoom < 2) {
                 zoomLevel.textContent = "Normal";
-            } else if (currentZoom < 3) {
-                zoomLevel.textContent = "Kuchli";
+                detectionInfo.textContent = "Kichik QR kodlarni o'qish uchun zoom qiling";
             } else if (currentZoom < 4) {
+                zoomLevel.textContent = "Kuchli";
+                detectionInfo.textContent = "Yaxshi! Kichik QR kodlarni o'qish mumkin";
+            } else if (currentZoom < 7) {
                 zoomLevel.textContent = "Juda kuchli";
+                detectionInfo.textContent = "Ajoyib! Juda kichik QR kodlarni ham o'qiy oladi";
             } else {
                 zoomLevel.textContent = "Maksimal";
+                detectionInfo.textContent = "Maksimal zoom - eng kichik QR kodlarni o'qing";
             }
             
             applyZoom();
@@ -511,40 +448,34 @@
         // Sezgirlik sozlamalari
         sensitivityRange.addEventListener('input', function() {
             sensitivity = parseInt(this.value);
-            updateSensitivityDisplay();
-        });
-
-        function updateSensitivityDisplay() {
-            // Sezgirlik darajasi
             const levels = ["Juda past", "Past", "O'rta", "Yuqori", "Juda yuqori"];
             sensitivityLevel.textContent = levels[Math.floor(sensitivity / 2)];
-            
-            // Indikatorni yangilash
-            const dots = levelIndicator.querySelectorAll('.level-dot');
-            dots.forEach((dot, index) => {
-                dot.classList.remove('active', 'high');
-                if (index < sensitivity) {
-                    dot.classList.add('active');
-                    if (index >= 7) {
-                        dot.classList.add('high');
-                    }
-                }
-            });
-        }
+        });
 
-        // Zoomni qo'llash
+        // ZOOM ISHLASHI - Digital zoom bilan
         function applyZoom() {
             if (track) {
                 try {
-                    track.applyConstraints({
-                        advanced: [{ zoom: currentZoom }]
-                    });
+                    // Hardware zoom
+                    const capabilities = track.getCapabilities();
+                    if (capabilities.zoom) {
+                        track.applyConstraints({
+                            advanced: [{ zoom: currentZoom }]
+                        });
+                    } else {
+                        // Digital zoom
+                        video.style.transform = `scale(${currentZoom})`;
+                        video.style.transformOrigin = 'center center';
+                    }
                 } catch (e) {
-                    // Digital zoom
+                    // Digital zoom fallback
                     video.style.transform = `scale(${currentZoom})`;
+                    video.style.transformOrigin = 'center center';
                 }
             } else {
+                // Digital zoom
                 video.style.transform = `scale(${currentZoom})`;
+                video.style.transformOrigin = 'center center';
             }
         }
 
@@ -568,6 +499,7 @@
         // Yangi skanerlash
         newScanBtn.addEventListener('click', () => {
             result.style.display = 'none';
+            detectionAttempts = 0;
             startScanner();
         });
 
@@ -594,9 +526,10 @@
                 
                 status.textContent = '🔍 QR kod qidirilmoqda...';
                 scanning = true;
+                detectionAttempts = 0;
                 
                 // Tez skanerlash
-                scanInterval = setInterval(scanQRCode, 100);
+                scanInterval = setInterval(scanQRCode, 150);
                 
             } catch (err) {
                 status.textContent = '❌ Kamera ochilmadi';
@@ -619,94 +552,101 @@
             status.className = 'status status-error';
         }
 
-        // Tasvirni kuchli yaxshilash
+        // Kuchli tasvir yaxshilash
         function enhanceImage(imageData) {
             if (!autoEnhance.checked) return imageData;
 
             const data = imageData.data;
-            const width = imageData.width;
-            const height = imageData.height;
             
-            // Sezgirlik asosida kuchlanish
-            const enhanceFactor = 1 + (sensitivity * 0.08);
+            // Zoom va sezgirlik asosida kuchlanish
+            const brightness = 1.0 + (currentZoom * 0.15);
+            const contrast = 1.2 + (sensitivity * 0.08);
             
             for (let i = 0; i < data.length; i += 4) {
-                let r = data[i];
-                let g = data[i + 1];
-                let b = data[i + 2];
-
-                // Yorqinlik yaxshilash
-                if (brightnessEnhance.checked) {
-                    const brightness = 1.2 + (currentZoom * 0.1);
-                    r = Math.min(255, r * brightness);
-                    g = Math.min(255, g * brightness);
-                    b = Math.min(255, b * brightness);
-                }
-
-                // Kontrast yaxshilash
-                if (contrastEnhance.checked) {
-                    const contrast = 1.3 + (sensitivity * 0.05);
-                    r = Math.min(255, 128 + (r - 128) * contrast);
-                    g = Math.min(255, 128 + (g - 128) * contrast);
-                    b = Math.min(255, 128 + (b - 128) * contrast);
-                }
-
-                // Tiniqlik yaxshilash (sharpness)
-                if (sharpnessEnhance.checked && i > width * 4 + 4) {
-                    // Oddiy sharpness filter
-                    const sharpness = 0.3;
-                    r = Math.min(255, r + (r - data[i - 4]) * sharpness);
-                    g = Math.min(255, g + (g - data[i - 3]) * sharpness);
-                    b = Math.min(255, b + (b - data[i - 2]) * sharpness);
-                }
-
-                data[i] = r;
-                data[i + 1] = g;
-                data[i + 2] = b;
+                // Brightness
+                data[i] = Math.min(255, data[i] * brightness);
+                data[i+1] = Math.min(255, data[i+1] * brightness);
+                data[i+2] = Math.min(255, data[i+2] * brightness);
+                
+                // Contrast
+                data[i] = Math.min(255, 128 + (data[i] - 128) * contrast);
+                data[i+1] = Math.min(255, 128 + (data[i+1] - 128) * contrast);
+                data[i+2] = Math.min(255, 128 + (data[i+2] - 128) * contrast);
             }
             
             return imageData;
         }
 
-        // QR kodni skanerlash
+        // Kichik QR kodlarni o'qish uchun maxsus funksiya
+        function scanSmallQR(imageData, scale = 2) {
+            const originalWidth = imageData.width;
+            const originalHeight = imageData.height;
+            
+            // Rasmni kattalashtirish
+            const scaledCanvas = document.createElement('canvas');
+            scaledCanvas.width = originalWidth * scale;
+            scaledCanvas.height = originalHeight * scale;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            
+            // Original rasmni chizish
+            scaledCtx.putImageData(imageData, 0, 0);
+            
+            // Rasmni kattalashtirish
+            scaledCtx.imageSmoothingEnabled = true;
+            scaledCtx.imageSmoothingQuality = 'high';
+            scaledCtx.drawImage(scaledCanvas, 0, 0, originalWidth, originalHeight, 0, 0, scaledCanvas.width, scaledCanvas.height);
+            
+            const scaledImageData = scaledCtx.getImageData(0, 0, scaledCanvas.width, scaledCanvas.height);
+            
+            return jsQR(scaledImageData.data, scaledCanvas.width, scaledCanvas.height, {
+                inversionAttempts: 'attemptBoth',
+            });
+        }
+
+        // Asosiy skanerlash funksiyasi
         function scanQRCode() {
             if (!scanning || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+            
+            detectionAttempts++;
             
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // Yuqori sifatli skanerlash
+            if (highQuality.checked) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            } else {
+                canvas.width = 800;
+                canvas.height = 600;
+            }
             
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             
             // Tasvirni yaxshilash
-            imageData = enhanceImage(imageData);
+            if (autoEnhance.checked) {
+                imageData = enhanceImage(imageData);
+            }
             
-            // Turli xil inversion sozlamalari bilan skanerlash
+            // QR kodni qidirish
             let code = jsQR(imageData.data, imageData.width, imageData.height, {
                 inversionAttempts: sensitivity > 7 ? 'attemptBoth' : 'dontInvert',
             });
 
+            // Agar kichik QR kod bo'lsa, kattalashtirib qayta urinish
+            if (!code && currentZoom > 3) {
+                code = scanSmallQR(imageData, 2);
+            }
+
             // Yuqori sezgirlikda qo'shimcha urinishlar
             if (!code && sensitivity > 8) {
-                // Kichikroq maydonni tekshirish
-                const smallerCanvas = document.createElement('canvas');
-                const smallCtx = smallerCanvas.getContext('2d');
-                smallerCanvas.width = canvas.width / 2;
-                smallerCanvas.height = canvas.height / 2;
-                
-                smallCtx.drawImage(video, 0, 0, smallerCanvas.width, smallerCanvas.height);
-                const smallImageData = smallCtx.getImageData(0, 0, smallerCanvas.width, smallerCanvas.height);
-                
-                code = jsQR(smallImageData.data, smallerCanvas.width, smallerCanvas.height, {
-                    inversionAttempts: 'attemptBoth',
-                });
+                code = scanSmallQR(imageData, 3);
             }
-            
-            if (code) {
+
+            // Agar kod topilsa - ISHONCHLI RAVISHDA KO'RSATISH
+            if (code && code.data && code.data.length > 0) {
                 stopScanner();
                 
                 resultText.textContent = code.data;
@@ -715,17 +655,22 @@
                 status.textContent = '✅ QR kod topildi!';
                 status.className = 'status status-success';
                 
-                // Agar URL bo'lsa, avtomatik ochish taklifi
+                // URLni tekshirish
                 try {
                     new URL(code.data);
                     setTimeout(() => {
                         if (confirm('Bu URL. Ochishni xohlaysizmi?')) {
                             window.open(code.data, '_blank');
                         }
-                    }, 500);
+                    }, 300);
                 } catch (e) {
                     // URL emas
                 }
+            }
+            
+            // Statusni yangilash
+            if (detectionAttempts % 10 === 0) {
+                status.textContent = `🔍 QR kod qidirilmoqda... (${detectionAttempts})`;
             }
         }
 
@@ -749,14 +694,11 @@
             
             setTimeout(() => {
                 notification.remove();
-            }, 3000);
+            }, 2000);
         }
 
         // Dastur yuklanganda avtomatik boshlash
         window.addEventListener('load', startScanner);
-        
-        // Sezgirlikni boshlang'ich sozlash
-        updateSensitivityDisplay();
     </script>
 </body>
 </html>
