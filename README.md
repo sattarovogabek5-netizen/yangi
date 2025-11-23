@@ -7,6 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <style>
@@ -148,6 +149,13 @@
             height: 250px;
             border: 2px solid #10b981;
             border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .scanner-frame.zoomed {
+            width: 200px;
+            height: 200px;
+            border-color: #f59e0b;
         }
 
         .scanner-corner {
@@ -155,6 +163,11 @@
             width: 20px;
             height: 20px;
             border-color: #10b981;
+            transition: all 0.3s ease;
+        }
+
+        .scanner-frame.zoomed .scanner-corner {
+            border-color: #f59e0b;
         }
 
         .corner-tl {
@@ -277,9 +290,84 @@
             color: white;
         }
 
+        .btn-info {
+            background: #3b82f6;
+            color: white;
+        }
+
         .btn-icon {
             width: 18px;
             height: 18px;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .settings-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .setting-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .setting-label {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999999);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .setting-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .slider {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
         }
 
         /* Results */
@@ -421,6 +509,11 @@
             color: #166534;
         }
 
+        .type-icon.text {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
         .history-item-info h4 {
             font-size: 14px;
             font-weight: 600;
@@ -547,6 +640,22 @@
             flex-shrink: 0;
         }
 
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #10b981;
+            transition: width 0.3s ease;
+        }
+
         /* Utility classes */
         .hidden {
             display: none !important;
@@ -594,6 +703,13 @@
             const [lastResult, setLastResult] = useState(null);
             const [webApp, setWebApp] = useState(tg);
             const [user, setUser] = useState(tg?.initDataUnsafe?.user);
+            const [settings, setSettings] = useState({
+                zoom: 1.0,
+                brightness: 1.0,
+                contrast: 1.0,
+                autoZoom: true,
+                imageEnhancement: true
+            });
 
             useEffect(() => {
                 // LocalStorage dan tarixni yuklash
@@ -601,7 +717,18 @@
                 if (savedHistory) {
                     setScanHistory(JSON.parse(savedHistory));
                 }
+
+                // Sozlamalarni yuklash
+                const savedSettings = localStorage.getItem('scannerSettings');
+                if (savedSettings) {
+                    setSettings(JSON.parse(savedSettings));
+                }
             }, []);
+
+            const updateSettings = (newSettings) => {
+                setSettings(newSettings);
+                localStorage.setItem('scannerSettings', JSON.stringify(newSettings));
+            };
 
             const addToHistory = (result) => {
                 const newItem = {
@@ -609,7 +736,8 @@
                     text: result.text,
                     format: result.format,
                     timestamp: new Date().toLocaleString('uz-UZ'),
-                    type: result.format.includes('QR') ? 'qr' : 'barcode'
+                    type: result.format.includes('QR') ? 'qr' : 
+                          result.format.includes('CODE') ? 'barcode' : 'text'
                 };
                 
                 const newHistory = [newItem, ...scanHistory.slice(0, 49)];
@@ -664,7 +792,9 @@
                             lastResult,
                             onCopy: copyToClipboard,
                             onSendToBot: sendToBot,
-                            webApp
+                            webApp,
+                            settings,
+                            onSettingsChange: updateSettings
                         }) : 
                         React.createElement(HistorySection, {
                             key: 'history',
@@ -723,9 +853,11 @@
             );
         }
 
-        function ScannerSection({ onScanResult, lastResult, onCopy, onSendToBot, webApp }) {
+        function ScannerSection({ onScanResult, lastResult, onCopy, onSendToBot, webApp, settings, onSettingsChange }) {
             const [scanning, setScanning] = useState(false);
             const [error, setError] = useState(null);
+            const [isZoomed, setIsZoomed] = useState(false);
+            const [progress, setProgress] = useState(0);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const streamRef = useRef(null);
@@ -733,13 +865,15 @@
 
             const startScanning = async () => {
                 setError(null);
+                setProgress(0);
                 
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({
                         video: {
                             facingMode: 'environment',
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 }
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 },
+                            zoom: settings.zoom
                         }
                     });
 
@@ -748,24 +882,29 @@
                     video.srcObject = stream;
                     
                     setScanning(true);
+                    setProgress(30);
 
                     // Video yuklanganidan keyin skanerlashni boshlash
                     video.onloadeddata = () => {
+                        setProgress(60);
                         // QR va barcode skanerlash uchun interval
                         scanIntervalRef.current = setInterval(() => {
                             if (!scanning) return;
                             scanForCodes(video);
-                        }, 500); // Har 500ms da skanerlash
+                        }, 300); // Har 300ms da skanerlash
+                        setProgress(100);
                     };
 
                 } catch (err) {
                     setError(`Kamerani ochishda xato: ${err.message}`);
                     setScanning(false);
+                    setProgress(0);
                 }
             };
 
             const stopScanning = () => {
                 setScanning(false);
+                setIsZoomed(false);
                 if (scanIntervalRef.current) {
                     clearInterval(scanIntervalRef.current);
                     scanIntervalRef.current = null;
@@ -774,10 +913,37 @@
                     streamRef.current.getTracks().forEach(track => track.stop());
                     streamRef.current = null;
                 }
+                setProgress(0);
+            };
+
+            // Tasvirni yaxshilash funksiyasi
+            const enhanceImage = (imageData) => {
+                const data = imageData.data;
+                const length = data.length;
+                
+                // Kontrast va yorug'likni sozlash
+                for (let i = 0; i < length; i += 4) {
+                    // Yorug'lik
+                    if (settings.brightness !== 1.0) {
+                        data[i] = Math.min(255, data[i] * settings.brightness);     // R
+                        data[i + 1] = Math.min(255, data[i + 1] * settings.brightness); // G
+                        data[i + 2] = Math.min(255, data[i + 2] * settings.brightness); // B
+                    }
+                    
+                    // Kontrast
+                    if (settings.contrast !== 1.0) {
+                        const factor = (259 * (settings.contrast + 255)) / (255 * (259 - settings.contrast));
+                        data[i] = factor * (data[i] - 128) + 128;
+                        data[i + 1] = factor * (data[i + 1] - 128) + 128;
+                        data[i + 2] = factor * (data[i + 2] - 128) + 128;
+                    }
+                }
+                
+                return imageData;
             };
 
             // QR va barcode kodlarni skanerlash funksiyasi
-            const scanForCodes = (video) => {
+            const scanForCodes = async (video) => {
                 const canvas = canvasRef.current;
                 const context = canvas.getContext('2d');
                 
@@ -793,9 +959,15 @@
                     // Videodan rasm chizish
                     context.drawImage(video, 0, 0, canvas.width, canvas.height);
                     
+                    // Tasvirni yaxshilash
+                    let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    if (settings.imageEnhancement) {
+                        imageData = enhanceImage(imageData);
+                        context.putImageData(imageData, 0, 0);
+                    }
+
                     // QR kodni skanerlash
                     try {
-                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                         const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
                         
                         if (qrCode) {
@@ -807,6 +979,12 @@
                             if (webApp) {
                                 webApp.HapticFeedback.impactOccurred('medium');
                             }
+                            
+                            // Avtomatik zoom
+                            if (settings.autoZoom && !isZoomed) {
+                                setIsZoomed(true);
+                            }
+                            
                             stopScanning();
                             return;
                         }
@@ -832,11 +1010,38 @@
                                 if (webApp) {
                                     webApp.HapticFeedback.impactOccurred('medium');
                                 }
+                                
+                                // Avtomatik zoom
+                                if (settings.autoZoom && !isZoomed) {
+                                    setIsZoomed(true);
+                                }
+                                
                                 stopScanning();
                             }
                         });
                     } catch (e) {
                         console.log('Barcode skanerlash xatosi:', e);
+                    }
+
+                    // OCR bilan matn skanerlash (agar kerak bo'lsa)
+                    try {
+                        // Bu qismni faqat kerak bo'lganda ishlating
+                        // Tesseract.js og'ir kutubxona, shuning uchun kommentga olingan
+                        /*
+                        const worker = await Tesseract.createWorker('eng+uzb');
+                        const { data: { text } } = await worker.recognize(canvas);
+                        await worker.terminate();
+                        
+                        if (text && text.trim().length > 5) {
+                            onScanResult({
+                                text: text.trim(),
+                                format: 'TEXT_OCR'
+                            });
+                            stopScanning();
+                        }
+                        */
+                    } catch (e) {
+                        console.log('OCR xatosi:', e);
                     }
                 }
             };
@@ -855,6 +1060,176 @@
 
             return React.createElement('div', { className: 'scanner-section' },
                 React.createElement('div', { className: 'container' },
+                    // Settings Panel
+                    React.createElement('div', { className: 'settings-panel' },
+                        React.createElement('div', { className: 'settings-header' },
+                            React.createElement('div', { className: 'settings-title' },
+                                React.createElement('svg', {
+                                    width: "18",
+                                    height: "18",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                },
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                    }),
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: "2",
+                                        d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    })
+                                ),
+                                'Skanerlash Sozlamalari'
+                            )
+                        ),
+                        React.createElement('div', { className: 'settings-grid' },
+                            React.createElement('div', { className: 'setting-item' },
+                                React.createElement('div', { className: 'setting-label' },
+                                    React.createElement('svg', {
+                                        width: "12",
+                                        height: "12",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: "2",
+                                            d: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                        })
+                                    ),
+                                    'Zoom'
+                                ),
+                                React.createElement('input', {
+                                    type: 'range',
+                                    min: '1',
+                                    max: '5',
+                                    step: '0.1',
+                                    value: settings.zoom,
+                                    onChange: (e) => onSettingsChange({...settings, zoom: parseFloat(e.target.value)}),
+                                    className: 'slider'
+                                }),
+                                React.createElement('div', { className: 'setting-value' }, `${settings.zoom}x`)
+                            ),
+                            React.createElement('div', { className: 'setting-item' },
+                                React.createElement('div', { className: 'setting-label' },
+                                    React.createElement('svg', {
+                                        width: "12",
+                                        height: "12",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: "2",
+                                            d: "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                                        })
+                                    ),
+                                    'Yorug\'lik'
+                                ),
+                                React.createElement('input', {
+                                    type: 'range',
+                                    min: '0.5',
+                                    max: '2',
+                                    step: '0.1',
+                                    value: settings.brightness,
+                                    onChange: (e) => onSettingsChange({...settings, brightness: parseFloat(e.target.value)}),
+                                    className: 'slider'
+                                }),
+                                React.createElement('div', { className: 'setting-value' }, `${settings.brightness}x`)
+                            ),
+                            React.createElement('div', { className: 'setting-item' },
+                                React.createElement('div', { className: 'setting-label' },
+                                    React.createElement('svg', {
+                                        width: "12",
+                                        height: "12",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: "2",
+                                            d: "M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                                        })
+                                    ),
+                                    'Kontrast'
+                                ),
+                                React.createElement('input', {
+                                    type: 'range',
+                                    min: '0.5',
+                                    max: '2',
+                                    step: '0.1',
+                                    value: settings.contrast,
+                                    onChange: (e) => onSettingsChange({...settings, contrast: parseFloat(e.target.value)}),
+                                    className: 'slider'
+                                }),
+                                React.createElement('div', { className: 'setting-value' }, `${settings.contrast}x`)
+                            ),
+                            React.createElement('div', { className: 'setting-item' },
+                                React.createElement('div', { className: 'setting-label' },
+                                    React.createElement('svg', {
+                                        width: "12",
+                                        height: "12",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: "2",
+                                            d: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                        })
+                                    ),
+                                    'Avtomatik Zoom'
+                                ),
+                                React.createElement('div', { 
+                                    style: { 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '8px',
+                                        marginTop: '4px'
+                                    } 
+                                },
+                                    React.createElement('label', { 
+                                        style: { 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '4px',
+                                            fontSize: '12px'
+                                        } 
+                                    },
+                                        React.createElement('input', {
+                                            type: 'checkbox',
+                                            checked: settings.autoZoom,
+                                            onChange: (e) => onSettingsChange({...settings, autoZoom: e.target.checked}),
+                                            style: { margin: 0 }
+                                        }),
+                                        'Yoqilgan'
+                                    )
+                                )
+                            )
+                        )
+                    ),
+
+                    // Progress Bar
+                    progress > 0 && React.createElement('div', { className: 'progress-bar' },
+                        React.createElement('div', { 
+                            className: 'progress-fill',
+                            style: { width: `${progress}%` }
+                        })
+                    ),
+
                     // Scanner View
                     React.createElement('div', { className: 'scanner-container' },
                         React.createElement('video', {
@@ -866,7 +1241,8 @@
                                 width: '100%',
                                 height: '100%',
                                 objectFit: 'cover',
-                                display: scanning ? 'block' : 'none'
+                                display: scanning ? 'block' : 'none',
+                                filter: `brightness(${settings.brightness}) contrast(${settings.contrast})`
                             }
                         }),
                         React.createElement('canvas', {
@@ -875,7 +1251,7 @@
                         }),
                         
                         scanning && React.createElement('div', { className: 'scanner-overlay' },
-                            React.createElement('div', { className: 'scanner-frame' },
+                            React.createElement('div', { className: `scanner-frame ${isZoomed ? 'zoomed' : ''}` },
                                 React.createElement('div', { className: 'scanner-corner corner-tl' }),
                                 React.createElement('div', { className: 'scanner-corner corner-tr' }),
                                 React.createElement('div', { className: 'scanner-corner corner-bl' }),
@@ -1050,7 +1426,8 @@
                         React.createElement('ul', { className: 'instructions-list' }, [
                             React.createElement('li', { key: 1 }, '• QR kod yoki shtrix-kodni ramkaga joylashtiring'),
                             React.createElement('li', { key: 2 }, '• Yorug\'lik yetarli bo\'lishiga ishonch hosil qiling'),
-                            React.createElement('li', { key: 3 }, '• Kod avtomatik ravishda skanerlanadi')
+                            React.createElement('li', { key: 3 }, '• Kod avtomatik ravishda skanerlanadi'),
+                            React.createElement('li', { key: 4 }, '• Avtomatik zoom kodni topganda faollashadi')
                         ])
                     )
                 )
@@ -1134,6 +1511,7 @@
                                                         d: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
                                                     })
                                                 ) :
+                                                item.type === 'barcode' ?
                                                 React.createElement('svg', {
                                                     width: "16",
                                                     height: "16",
@@ -1146,6 +1524,20 @@
                                                         strokeLinejoin: "round",
                                                         strokeWidth: "2",
                                                         d: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                                    })
+                                                ) :
+                                                React.createElement('svg', {
+                                                    width: "16",
+                                                    height: "16",
+                                                    fill: "none",
+                                                    stroke: "currentColor",
+                                                    viewBox: "0 0 24 24"
+                                                },
+                                                    React.createElement('path', {
+                                                        strokeLinecap: "round",
+                                                        strokeLinejoin: "round",
+                                                        strokeWidth: "2",
+                                                        d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                     })
                                                 )
                                         ),
