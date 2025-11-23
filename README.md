@@ -3,610 +3,636 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner Mini App</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>QR Scanner - To'liq Ishlaydigan</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
-        .scanner-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .scanner-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+        
         .video-container {
             position: relative;
+            width: 100%;
+            height: 300px;
             background: #000;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            height: 360px;
+            margin-bottom: 20px;
         }
-        .video-element {
+        
+        #video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .canvas-overlay {
+        
+        #canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
         }
+        
         .controls {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
             flex-wrap: wrap;
+            margin-bottom: 20px;
         }
+        
         .btn {
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
+            padding: 12px 20px;
             border: none;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #1d4ed8;
-        }
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-        .btn-warning {
-            background: #d97706;
-            color: white;
-        }
-        .btn-warning:hover {
-            background: #b45309;
-        }
-        .btn-secondary {
-            background: #e5e7eb;
-            color: #374151;
-        }
-        .btn-secondary:hover {
-            background: #d1d5db;
-        }
-        .btn-success {
-            background: #059669;
-            color: white;
-        }
-        .btn-success:hover {
-            background: #047857;
-        }
-        .file-input {
-            display: none;
-        }
-        .result-box {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            height: fit-content;
-        }
-        .qr-result {
-            word-break: break-all;
-            background: #f3f4f6;
-            padding: 12px;
             border-radius: 8px;
-            margin: 15px 0;
-            border: 1px solid #e5e7eb;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
         }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219a52;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #d68910;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-label {
+            display: block;
+            padding: 12px 20px;
+            background: #95a5a6;
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .file-label:hover {
+            background: #7f8c8d;
+        }
+        
         .zoom-control {
-            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
         }
+        
+        .zoom-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
         .zoom-slider {
             width: 100%;
-            margin: 10px 0;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
         }
-        .help-text {
-            font-size: 0.875rem;
-            color: #6b7280;
-            margin-top: 5px;
+        
+        .result-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
         }
-        .error-message {
-            background: #fef2f2;
-            color: #dc2626;
-            padding: 12px;
-            border-radius: 8px;
+        
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .result-text {
+            font-size: 16px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        
+        .empty-result {
+            color: #6c757d;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
             margin: 15px 0;
-            border: 1px solid #fecaca;
+            text-align: center;
+            font-weight: 600;
         }
-        .processing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px;
-            background: #eff6ff;
-            border-radius: 8px;
-            margin: 15px 0;
+        
+        .status-scanning {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
-        .spinner {
+        
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .tips {
+            background: #e8f4fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .tips h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .tips ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .tips li {
+            padding: 8px 0;
+            border-bottom: 1px solid #d6eaf8;
+        }
+        
+        .tips li:last-child {
+            border-bottom: none;
+        }
+        
+        .qr-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            pointer-events: none;
+            animation: framePulse 2s infinite;
+        }
+        
+        @keyframes framePulse {
+            0% { border-color: #00ff00; }
+            50% { border-color: #00cc00; }
+            100% { border-color: #00ff00; }
+        }
+        
+        .qr-detected {
+            border-color: #ff0000 !important;
+            animation: detectedPulse 0.5s infinite;
+        }
+        
+        @keyframes detectedPulse {
+            0% { border-color: #ff0000; }
+            50% { border-color: #ff6666; }
+            100% { border-color: #ff0000; }
+        }
+        
+        .processing {
+            display: inline-block;
             width: 20px;
             height: 20px;
-            border: 2px solid #d1d5db;
-            border-top: 2px solid #3b82f6;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin-right: 10px;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .app-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #1f2937;
-        }
-        .section-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: #374151;
-        }
-        .grid-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        @media (min-width: 768px) {
-            .grid-layout {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-4">
-    <div id="root"></div>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>QR Scanner</h1>
+            <p>Kamera yoki rasm orqali QR kodlarni skanerlang</p>
+        </div>
+        
+        <div class="content">
+            <div class="scanner-section">
+                <div class="video-container">
+                    <video id="video" playsinline></video>
+                    <canvas id="canvas"></canvas>
+                    <div class="qr-frame" id="qrFrame"></div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="startBtn">Kamerani Yoqish</button>
+                    <button class="btn btn-danger" id="stopBtn" disabled>Kamerani O'chirish</button>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" class="file-input" accept="image/*">
+                        <label for="fileInput" class="file-label">Rasm Yuklash</label>
+                    </div>
+                </div>
+                
+                <div class="zoom-control">
+                    <label class="zoom-label">Zoom: <span id="zoomValue">1.00x</span></label>
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="1" max="3" step="0.1" value="1" disabled>
+                </div>
+                
+                <div id="status" class="status status-stopped">
+                    🔴 Kamera o'chirilgan
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2>Natijalar</h2>
+                <div class="result-box">
+                    <div id="result" class="empty-result">
+                        QR kod skanerlanganida natija shu yerda paydo bo'ladi...
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" id="copyBtn" disabled>Natijani Nusxalash</button>
+                <button class="btn btn-warning" id="clearBtn">Tozalash</button>
+                
+                <div class="tips">
+                    <h3>📝 Qo'llanma</h3>
+                    <ul>
+                        <li>✅ "Kamerani Yoqish" tugmasini bosing va ruxsat bering</li>
+                        <li>✅ QR kodni kameraga ko'rsating</li>
+                        <li>✅ Yoki "Rasm Yuklash" orqali QR kod rasmini yuklang</li>
+                        <li>✅ Skanerlangan matnni "Natijani Nusxalash" tugmasi bilan nusxalashingiz mumkin</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script type="text/babel">
-        const { useRef, useEffect, useState } = React;
-
-        function QRScannerMiniApp() {
-            const videoRef = useRef(null);
-            const canvasRef = useRef(null);
-            const [stream, setStream] = useState(null);
-            const [scanning, setScanning] = useState(false);
-            const [decoded, setDecoded] = useState(null);
-            const [zoom, setZoom] = useState(1);
-            const [supportsZoom, setSupportsZoom] = useState(false);
-            const [supportsTorch, setSupportsTorch] = useState(false);
-            const trackRef = useRef(null);
-            const [torchOn, setTorchOn] = useState(false);
-            const [processing, setProcessing] = useState(false);
-            const [error, setError] = useState(null);
-            const animationRef = useRef(null);
-
-            // Kamera o'chirish
-            useEffect(() => {
-                return () => stopCamera();
-            }, []);
-
-            // Kamerani ishga tushirish
-            async function startCamera() {
+    <script>
+        class QRScanner {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.fileInput = document.getElementById('fileInput');
+                this.zoomSlider = document.getElementById('zoomSlider');
+                this.zoomValue = document.getElementById('zoomValue');
+                this.status = document.getElementById('status');
+                this.result = document.getElementById('result');
+                this.copyBtn = document.getElementById('copyBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.qrFrame = document.getElementById('qrFrame');
+                
+                this.stream = null;
+                this.scanning = false;
+                this.animationId = null;
+                this.lastResult = null;
+                
+                this.initEventListeners();
+            }
+            
+            initEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startCamera());
+                this.stopBtn.addEventListener('click', () => this.stopCamera());
+                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+                this.zoomSlider.addEventListener('input', (e) => this.handleZoom(e));
+                this.copyBtn.addEventListener('click', () => this.copyResult());
+                this.clearBtn.addEventListener('click', () => this.clearResult());
+            }
+            
+            async startCamera() {
                 try {
-                    setError(null);
-                    const constraints = {
-                        video: { 
-                            facingMode: 'environment', 
-                            width: { ideal: 1280 }, 
-                            height: { ideal: 720 },
-                            zoom: { ideal: zoom }
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    });
+                    
+                    this.video.srcObject = this.stream;
+                    await this.video.play();
+                    
+                    // Canvas o'lchamlarini sozlash
+                    this.canvas.width = this.video.videoWidth;
+                    this.canvas.height = this.video.videoHeight;
+                    
+                    this.scanning = true;
+                    this.updateUI('started');
+                    this.scanFrame();
+                    
+                } catch (error) {
+                    console.error('Kamera ochishda xatolik:', error);
+                    this.showError('Kamera ochib boʻlmadi. Iltimos, ruxsatnomalarni tekshiring.');
+                }
+            }
+            
+            stopCamera() {
+                this.scanning = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                this.updateUI('stopped');
+                this.qrFrame.classList.remove('qr-detected');
+            }
+            
+            scanFrame() {
+                if (!this.scanning) return;
+                
+                try {
+                    // Videoni canvasga chizish
+                    this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                    
+                    // Tasvir ma'lumotlarini olish
+                    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    // jsQR orqali QR kodni skanerlash
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+                    
+                    if (code) {
+                        this.handleQRDetected(code);
+                    } else {
+                        this.qrFrame.classList.remove('qr-detected');
+                    }
+                    
+                } catch (error) {
+                    console.error('Skanerlashda xatolik:', error);
+                }
+                
+                this.animationId = requestAnimationFrame(() => this.scanFrame());
+            }
+            
+            handleQRDetected(code) {
+                if (code.data !== this.lastResult) {
+                    this.lastResult = code.data;
+                    this.showResult(code.data);
+                    this.qrFrame.classList.add('qr-detected');
+                    
+                    // QR kod joylashuvini chizish
+                    this.drawQRCodeLocation(code.location);
+                    
+                    // Avtomatik to'xtatish va qayta boshlash
+                    setTimeout(() => {
+                        this.qrFrame.classList.remove('qr-detected');
+                        this.lastResult = null;
+                    }, 2000);
+                }
+            }
+            
+            drawQRCodeLocation(location) {
+                this.ctx.strokeStyle = '#00ff00';
+                this.ctx.lineWidth = 4;
+                this.ctx.beginPath();
+                this.ctx.moveTo(location.topLeftCorner.x, location.topLeftCorner.y);
+                this.ctx.lineTo(location.topRightCorner.x, location.topRightCorner.y);
+                this.ctx.lineTo(location.bottomRightCorner.x, location.bottomRightCorner.y);
+                this.ctx.lineTo(location.bottomLeftCorner.x, location.bottomLeftCorner.y);
+                this.ctx.closePath();
+                this.ctx.stroke();
+            }
+            
+            async handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.startsWith('image/')) {
+                    this.showError('Iltimos, faqat rasm fayllarini yuklang.');
+                    return;
+                }
+                
+                try {
+                    this.status.innerHTML = '<div class="processing"></div> Rasm qayta ishlanyapti...';
+                    
+                    const img = new Image();
+                    img.onload = () => {
+                        this.canvas.width = img.width;
+                        this.canvas.height = img.height;
+                        this.ctx.drawImage(img, 0, 0);
+                        
+                        // Rasm uchun QR skanerlash
+                        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: "both",
+                        });
+                        
+                        if (code) {
+                            this.showResult(code.data);
+                            this.drawQRCodeLocation(code.location);
+                            this.status.textContent = '✅ QR kod muvaffaqiyatli topildi!';
+                        } else {
+                            this.showError('QR kod topilmadi. Boshqa rasm yoki yaxshiroq sifattagi QR kodni sinab ko\'ring.');
                         }
                     };
                     
-                    const s = await navigator.mediaDevices.getUserMedia(constraints);
-                    setStream(s);
+                    img.onerror = () => {
+                        this.showError('Rasm yuklashda xatolik yuz berdi.');
+                    };
                     
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = s;
-                        await videoRef.current.play();
-                    }
+                    img.src = URL.createObjectURL(file);
                     
-                    // Kamera qobiliyatlarini tekshirish
-                    const tracks = s.getVideoTracks();
-                    if (tracks && tracks.length) {
-                        trackRef.current = tracks[0];
-                        const caps = trackRef.current.getCapabilities ? trackRef.current.getCapabilities() : {};
-                        
-                        if (caps.zoom) setSupportsZoom(true);
-                        if (caps.torch) setSupportsTorch(true);
-                    }
-                    
-                    setScanning(true);
-                    requestAnimationFrame(tick);
-                } catch (err) {
-                    console.error('Camera start error', err);
-                    setError('Kamera ochib bo\'lmadi: iltimos brauzerga ruxsat bering yoki HTTPS orqali oching.');
+                } catch (error) {
+                    this.showError('Rasm yuklashda xatolik: ' + error.message);
                 }
             }
-
-            // Kamerani to'xtatish
-            function stopCamera() {
-                setScanning(false);
-                if (animationRef.current) {
-                    cancelAnimationFrame(animationRef.current);
-                    animationRef.current = null;
-                }
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    setStream(null);
-                }
-                if (trackRef.current) {
-                    trackRef.current = null;
-                }
-                setTorchOn(false);
-            }
-
-            // Zoom sozlash
-            async function setCameraZoom(value) {
-                const newZoom = Math.max(1, Math.min(5, value));
-                setZoom(newZoom);
+            
+            handleZoom(event) {
+                const zoom = event.target.value;
+                this.zoomValue.textContent = `${zoom}x`;
                 
-                try {
-                    if (trackRef.current && trackRef.current.applyConstraints) {
-                        await trackRef.current.applyConstraints({ 
-                            advanced: [{ zoom: newZoom }] 
-                        });
-                    }
-                    // Agar kamera zoom qo'llab-quvvatlamasa, CSS transform orqali
-                    if (videoRef.current && !supportsZoom) {
-                        videoRef.current.style.transform = `scale(${newZoom})`;
-                    }
-                } catch (e) {
-                    console.warn('Zoom sozlashda xatolik:', e);
-                    if (videoRef.current) {
-                        videoRef.current.style.transform = `scale(${newZoom})`;
-                    }
+                if (this.video) {
+                    this.video.style.transform = `scale(${zoom})`;
                 }
             }
-
-            // Flash (torch) ni boshqarish
-            async function toggleTorch() {
-                if (!trackRef.current || !supportsTorch) {
-                    alert('Ushbu qurilma yoki brauzer flashni qo\'llab-quvvatlamaydi.');
-                    return;
-                }
-
-                try {
-                    const newTorchState = !torchOn;
-                    await trackRef.current.applyConstraints({ 
-                        advanced: [{ torch: newTorchState }] 
-                    });
-                    setTorchOn(newTorchState);
-                } catch (err) {
-                    console.warn('Flashni boshqarishda xatolik:', err);
-                    alert('Flashni o\'zgartirib bo\'lmadi.');
+            
+            showResult(text) {
+                this.result.textContent = text;
+                this.result.className = 'result-text';
+                this.copyBtn.disabled = false;
+                
+                // Natija turiga qarab formatlash
+                this.formatResult(text);
+            }
+            
+            formatResult(text) {
+                if (text.startsWith('http://') || text.startsWith('https://')) {
+                    this.result.innerHTML = `<a href="${text}" target="_blank" style="color: #3498db; text-decoration: none;">${text}</a>`;
+                } else if (text.startsWith('WIFI:')) {
+                    this.result.innerHTML = `<strong>WiFi Ma'lumotlari:</strong><br>${text}`;
+                } else if (text.startsWith('MATN:')) {
+                    this.result.innerHTML = `<strong>Matn:</strong><br>${text.substring(5)}`;
+                } else if (text.startsWith('TEL:')) {
+                    this.result.innerHTML = `<strong>Telefon:</strong><br><a href="tel:${text.substring(4)}" style="color: #3498db; text-decoration: none;">${text.substring(4)}</a>`;
+                } else if (text.startsWith('EMAIL:')) {
+                    this.result.innerHTML = `<strong>Email:</strong><br><a href="mailto:${text.substring(6)}" style="color: #3498db; text-decoration: none;">${text.substring(6)}</a>`;
                 }
             }
-
-            // Tasvir sifatiini yaxshilash
-            function enhanceImage(ctx, width, height) {
-                const imageData = ctx.getImageData(0, 0, width, height);
-                const data = imageData.data;
-                
-                // Kontrast va yorug'likni sozlash
-                const contrast = 1.3;
-                const brightness = 15;
-                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-                
-                for (let i = 0; i < data.length; i += 4) {
-                    // RGB kanallari uchun
-                    for (let c = 0; c < 3; c++) {
-                        let value = data[i + c];
-                        value = factor * (value - 128) + 128 + brightness;
-                        data[i + c] = Math.max(0, Math.min(255, value));
-                    }
-                    // Alpha kanalini saqlab qolish
-                    data[i + 3] = 255;
-                }
-                
-                ctx.putImageData(imageData, 0, 0);
-                
-                // Sharpening (aniqlikni oshirish)
-                const sharpenedData = ctx.getImageData(0, 0, width, height);
-                const output = ctx.createImageData(width, height);
-                
-                for (let y = 1; y < height - 1; y++) {
-                    for (let x = 1; x < width - 1; x++) {
-                        for (let c = 0; c < 3; c++) {
-                            const index = (y * width + x) * 4 + c;
-                            const center = sharpenedData.data[index];
-                            
-                            // Laplacian filtr
-                            const laplacian = -sharpenedData.data[index - 4] 
-                                            - sharpenedData.data[index + 4] 
-                                            - sharpenedData.data[index - width * 4] 
-                                            - sharpenedData.data[index + width * 4] 
-                                            + 4 * center;
-                            
-                            let sharpenedValue = center + 0.3 * laplacian;
-                            output.data[index] = Math.max(0, Math.min(255, sharpenedValue));
-                        }
-                        output.data[(y * width + x) * 4 + 3] = 255;
+            
+            clearResult() {
+                this.result.textContent = 'QR kod skanerlanganida natija shu yerda paydo bo\'ladi...';
+                this.result.className = 'empty-result';
+                this.copyBtn.disabled = true;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+            copyResult() {
+                const text = this.result.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = this.copyBtn.textContent;
+                    this.copyBtn.textContent = '✅ Nusxalandi!';
+                    setTimeout(() => {
+                        this.copyBtn.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    this.showError('Nusxalash muvaffaqiyatsiz: ' + err);
+                });
+            }
+            
+            showError(message) {
+                this.status.innerHTML = `❌ ${message}`;
+                this.status.style.background = '#f8d7da';
+                this.status.style.color = '#721c24';
+                this.status.style.border = '1px solid #f5c6cb';
+            }
+            
+            updateUI(state) {
+                if (state === 'started') {
+                    this.startBtn.disabled = true;
+                    this.stopBtn.disabled = false;
+                    this.zoomSlider.disabled = false;
+                    this.status.innerHTML = '🟢 Kamera ishlayapti - QR kodni ko\'rsating';
+                    this.status.className = 'status status-scanning';
+                } else {
+                    this.startBtn.disabled = false;
+                    this.stopBtn.disabled = true;
+                    this.zoomSlider.disabled = true;
+                    this.status.innerHTML = '🔴 Kamera o\'chirilgan';
+                    this.status.className = 'status status-stopped';
+                    this.zoomValue.textContent = '1.00x';
+                    this.zoomSlider.value = 1;
+                    if (this.video) {
+                        this.video.style.transform = 'scale(1)';
                     }
                 }
-                
-                ctx.putImageData(output, 0, 0);
             }
-
-            // QR kodni skan qilish
-            function tick() {
-                if (!scanning || !videoRef.current || !canvasRef.current) {
-                    return;
-                }
-
-                const video = videoRef.current;
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                
-                // Video o'lchamlarini olish
-                const videoWidth = video.videoWidth || 640;
-                const videoHeight = video.videoHeight || 480;
-                
-                // Canvas o'lchamlarini yangilash
-                if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-                    canvas.width = videoWidth;
-                    canvas.height = videoHeight;
-                }
-
-                try {
-                    // Videoni canvasga chizish
-                    ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
-                    
-                    // Tasvirni yaxshilash
-                    enhanceImage(ctx, videoWidth, videoHeight);
-                    
-                    // QR kodni aniqlash
-                    const imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, { 
-                        inversionAttempts: 'dontInvert',
-                        canOverwriteImage: false
-                    });
-                    
-                    if (code) {
-                        setDecoded({ text: code.data, location: code.location });
-                        drawLocation(ctx, code.location);
-                        setScanning(false);
-                        setTimeout(() => setScanning(true), 1500);
-                    } else {
-                        setDecoded(null);
-                    }
-                } catch (e) {
-                    console.warn('Skanerlashda xatolik:', e);
-                }
-                
-                animationRef.current = requestAnimationFrame(tick);
-            }
-
-            // QR kod joylashuvini chizish
-            function drawLocation(ctx, location) {
-                if (!location) return;
-                
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = '#00ff00';
-                ctx.beginPath();
-                ctx.moveTo(location.topLeftCorner.x, location.topLeftCorner.y);
-                ctx.lineTo(location.topRightCorner.x, location.topRightCorner.y);
-                ctx.lineTo(location.bottomRightCorner.x, location.bottomRightCorner.y);
-                ctx.lineTo(location.bottomLeftCorner.x, location.bottomLeftCorner.y);
-                ctx.closePath();
-                ctx.stroke();
-            }
-
-            // Fayl yuklash orqali QR kodni skanerlash
-            async function onFilePicked(e) {
-                const file = e.target.files && e.target.files[0];
-                if (!file) return;
-                
-                // Fayl turini tekshirish
-                if (!file.type.startsWith('image/')) {
-                    alert('Iltimos, faqat rasm fayllarini yuklang.');
-                    return;
-                }
-                
-                setProcessing(true);
-                setDecoded(null);
-                
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = canvasRef.current;
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    
-                    // Rasm o'lchamini sozlash
-                    const maxWidth = 1280;
-                    const scale = Math.min(1, maxWidth / img.width);
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    
-                    // Rasmni chizish
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    // Tasvirni yaxshilash
-                    enhanceImage(ctx, canvas.width, canvas.height);
-                    
-                    // QR kodni aniqlash
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, { 
-                        inversionAttempts: 'both' 
-                    });
-                    
-                    if (code) {
-                        setDecoded({ text: code.data, location: code.location });
-                        drawLocation(ctx, code.location);
-                    } else {
-                        alert('QR kod topilmadi. Boshqa rasm yoki yaxshiroq sifattagi QR kodni sinab ko\'ring.');
-                    }
-                    
-                    setProcessing(false);
-                };
-                
-                img.onerror = () => {
-                    setProcessing(false);
-                    alert('Rasm yuklashda xatolik yuz berdi.');
-                };
-                
-                img.src = URL.createObjectURL(file);
-            }
-
-            // Matnni nusxalash
-            function copyToClipboard() {
-                if (decoded && decoded.text) {
-                    navigator.clipboard.writeText(decoded.text)
-                        .then(() => {
-                            alert('Matn nusxalandi!');
-                        })
-                        .catch(err => {
-                            console.error('Nusxalashda xatolik:', err);
-                            alert('Nusxalash muvaffaqiyatsiz. Qo\'lda nusxalashni sinab ko\'ring.');
-                        });
-                }
-            }
-
-            return (
-                <div className="scanner-container">
-                    <h1 className="app-title">QR Scanner Mini App</h1>
-                    
-                    {error && (
-                        <div className="error-message">
-                            {error}
-                        </div>
-                    )}
-                    
-                    <div className="grid-layout">
-                        <div>
-                            <div className="video-container">
-                                <video 
-                                    ref={videoRef} 
-                                    className="video-element" 
-                                    playsInline 
-                                    muted 
-                                />
-                                <canvas 
-                                    ref={canvasRef} 
-                                    className="canvas-overlay" 
-                                />
-                            </div>
-                            
-                            <div className="controls">
-                                {!stream ? (
-                                    <button 
-                                        onClick={startCamera} 
-                                        className="btn btn-primary"
-                                    >
-                                        Kamerani ishga tushur
-                                    </button>
-                                ) : (
-                                    <button 
-                                        onClick={stopCamera} 
-                                        className="btn btn-danger"
-                                    >
-                                        Kamerani to'xtat
-                                    </button>
-                                )}
-                                
-                                <label className="btn btn-secondary">
-                                    Rasm yuklash
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={onFilePicked} 
-                                        className="file-input" 
-                                    />
-                                </label>
-                                
-                                <button 
-                                    onClick={toggleTorch} 
-                                    className="btn btn-warning"
-                                    disabled={!supportsTorch}
-                                >
-                                    {torchOn ? 'Flash O\'chir' : 'Flash Yoq'}
-                                </button>
-                            </div>
-                            
-                            <div className="zoom-control">
-                                <label className="section-title">
-                                    Zoom: <span>{zoom.toFixed(2)}x</span>
-                                </label>
-                                <input 
-                                    type="range" 
-                                    min="1" 
-                                    max="5" 
-                                    step="0.1" 
-                                    value={zoom} 
-                                    onChange={(e) => setCameraZoom(Number(e.target.value))}
-                                    className="zoom-slider"
-                                    disabled={!stream}
-                                />
-                                {!supportsZoom && (
-                                    <div className="help-text">
-                                        (Agar brauzer yoki kamera ichki zoom ni qo'llab-quvvatlamasa, CSS shim ishlatiladi.)
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div className="result-box">
-                            <h3 className="section-title">Natija</h3>
-                            
-                            {processing && (
-                                <div className="processing-indicator">
-                                    <div className="spinner"></div>
-                                    <span>Qayta ishlash... iltimos kuting.</span>
-                                </div>
-                            )}
-                            
-                            {decoded ? (
-                                <div>
-                                    <div className="qr-result">
-                                        {decoded.text}
-                                    </div>
-                                    <button 
-                                        onClick={copyToClipboard} 
-                                        className="btn btn-success"
-                                    >
-                                        Matnni nusxalash
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="help-text">
-                                    Hozircha QR kod topilmadi. Kamerani QR kodga yaqinlashtiring yoki rasm yuklab ko'ring.
-                                </div>
-                            )}
-                            
-                            <div style={{marginTop: '20px'}}>
-                                <h4 className="section-title">Yordamchi sozlamalar</h4>
-                                <ul style={{listStyleType: 'disc', paddingLeft: '20px', fontSize: '0.875rem', color: '#6b7280'}}>
-                                    <li>Yaxshi natija uchun yorug'lik yetarliligiga e'tibor bering.</li>
-                                    <li>Agar QR teskari rangli bo'lsa, ilova avtomatik invert sinab ko'radi.</li>
-                                    <li>Rasm yuklash orqali eskirgan yoki past sifatli QRlarni ham tekshirish mumkin.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="help-text" style={{marginTop: '20px'}}>
-                        Eslatma: Ba'zi telefonlar va brauzerlar kamera flash/torch yoki ichki zoom ni cheklashi mumkin. 
-                        Eng yaxshi ishlash uchun Chrome yoki Edge (Android), Safari (iOS) ning so'nggi versiyasidan foydalaning.
-                    </div>
-                </div>
-            );
         }
-
-        // React ilovasini ishga tushirish
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<QRScannerMiniApp />);
+        
+        // Ilovani ishga tushirish
+        document.addEventListener('DOMContentLoaded', () => {
+            new QRScanner();
+        });
     </script>
 </body>
 </html>
