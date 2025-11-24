@@ -35,6 +35,65 @@
         .html5-qrcode-element:active {
             transform: translateY(0);
         }
+        #reader video {
+            width: 100% !important;
+            height: auto !important;
+            border-radius: 12px;
+        }
+        #reader {
+            position: relative;
+        }
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .scanner-frame {
+            width: 250px;
+            height: 250px;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .scanner-frame::before, .scanner-frame::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #10b981;
+        }
+        .scanner-frame::before {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+        }
+        .scanner-frame::after {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+        }
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #10b981;
+            top: 50%;
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
+        }
     </style>
 </head>
 <body>
@@ -53,13 +112,32 @@
             const [zoomLevel, setZoomLevel] = useState(1);
             const [brightness, setBrightness] = useState(100);
             const [contrast, setContrast] = useState(100);
+            const [cameraPermission, setCameraPermission] = useState(false);
             const html5QrCodeRef = useRef(null);
+            const readerRef = useRef(null);
 
             // Tarixni yuklash
             useEffect(() => {
                 const savedHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
                 setScanHistory(savedHistory);
             }, []);
+
+            // Kameraga ruxsatni tekshirish
+            useEffect(() => {
+                checkCameraPermission();
+            }, []);
+
+            const checkCameraPermission = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    // Agar ruxsat mavjud bo'lsa, streamni to'xtatamiz
+                    stream.getTracks().forEach(track => track.stop());
+                    setCameraPermission(true);
+                } catch (err) {
+                    setCameraPermission(false);
+                    console.error('Camera permission denied:', err);
+                }
+            };
 
             const startScanning = async () => {
                 try {
@@ -74,7 +152,10 @@
                         fps: 10,
                         qrbox: { width: 250, height: 250 },
                         aspectRatio: 1.0,
-                        focusMode: "continuous"
+                        focusMode: "continuous",
+                        supportedScanTypes: [
+                            Html5QrcodeScanType.SCAN_TYPE_CAMERA
+                        ]
                     };
                     
                     await html5QrCodeRef.current.start(
@@ -87,8 +168,18 @@
                     setScanning(true);
                     
                 } catch (err) {
-                    setError('Kamerani ochishda xatolik. Iltimos, kameraga ruxsat bering.');
                     console.error('Camera error:', err);
+                    if (err.name === 'NotAllowedError') {
+                        setError('Kameraga ruxsat berilmagan. Iltimos, brauzer sozlamalaridan kameraga ruxsat bering.');
+                    } else if (err.name === 'NotFoundError') {
+                        setError('Kamera topilmadi. Iltimos, qurilmangizda kamera mavjudligini tekshiring.');
+                    } else if (err.name === 'NotSupportedError') {
+                        setError('Bu funksiya brauzeringiz tomonidan qo\'llab-quvvatlanmaydi.');
+                    } else if (err.name === 'NotReadableError') {
+                        setError('Kamera band yoki ishlamayapti. Boshqa dastur kamerani ishlatayotgan bo\'lishi mumkin.');
+                    } else {
+                        setError('Kamerani ochishda xatolik yuz berdi: ' + err.message);
+                    }
                 }
             };
 
@@ -111,6 +202,8 @@
 
             const onScanFailure = (error) => {
                 // Xatolarni ko'rsatmaslik mumkin, chunki bu doimiy ravishda chaqiriladi
+                // Faqatgina debug uchun
+                // console.log("Scan failure:", error);
             };
 
             const stopScanning = async () => {
@@ -300,6 +393,14 @@
                         )
                     ),
                     React.createElement('div', { className: "flex-1 p-4 space-y-4" },
+                        !cameraPermission && React.createElement('div', { className: "bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-3 flex items-start gap-2" },
+                            React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "text-yellow-600 flex-shrink-0 mt-0.5" },
+                                React.createElement('circle', { cx: "12", cy: "12", r: "10" }),
+                                React.createElement('line', { x1: "12", y1: "8", x2: "12", y2: "12" }),
+                                React.createElement('line', { x1: "12", y1: "16", x2: "12.01", y2: "16" })
+                            ),
+                            React.createElement('p', { className: "text-yellow-800 text-sm" }, "Kameraga ruxsat berilmagan. Skanerlash uchun kameraga ruxsat bering.")
+                        ),
                         error && React.createElement('div', { className: "bg-red-50 border-l-4 border-red-500 rounded-lg p-3 flex items-start gap-2 animate-pulse" },
                             React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "text-red-600 flex-shrink-0 mt-0.5" },
                                 React.createElement('circle', { cx: "12", cy: "12", r: "10" }),
@@ -318,8 +419,14 @@
                         React.createElement('div', { className: "relative bg-white rounded-2xl shadow-xl overflow-hidden" },
                             React.createElement('div', {
                                 id: "reader",
+                                ref: readerRef,
                                 className: `w-full h-64 ${scanning ? 'block' : 'hidden'}`
                             }),
+                            scanning && React.createElement('div', { className: "scanner-overlay" },
+                                React.createElement('div', { className: "scanner-frame" },
+                                    React.createElement('div', { className: "scanner-line" })
+                                )
+                            ),
                             !scanning && !result && React.createElement('div', { className: "h-64 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center p-6" },
                                 React.createElement('div', { className: "bg-white rounded-full p-6 shadow-lg mb-4" },
                                     React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "48", height: "48", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "text-emerald-600" },
@@ -391,13 +498,14 @@
                         ),
                         !scanning && !result && React.createElement('button', {
                             onClick: startScanning,
-                            className: "w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-xl font-bold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 text-lg"
+                            disabled: !cameraPermission,
+                            className: `w-full ${cameraPermission ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700' : 'bg-gray-400'} text-white py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 text-lg`
                         },
                             React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
                                 React.createElement('path', { d: "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" }),
                                 React.createElement('circle', { cx: "12", cy: "13", r: "3" })
                             ),
-                            "Skanerlashni Boshlash"
+                            cameraPermission ? "Skanerlashni Boshlash" : "Kameraga Ruxsat Kerak"
                         ),
                         scanning && React.createElement('button', {
                             onClick: stopScanning,
