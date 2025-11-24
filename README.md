@@ -14,6 +14,27 @@
         * {
             font-family: 'Inter', sans-serif;
         }
+        .html5-qrcode-element {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            background: linear-gradient(to right, #059669, #047857);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);
+        }
+        .html5-qrcode-element:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(5, 150, 105, 0.4);
+        }
+        .html5-qrcode-element:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -27,37 +48,18 @@
             const [result, setResult] = useState('');
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
-            const [botToken, setBotToken] = useState('');
-            const [chatId, setChatId] = useState('');
             const [scanHistory, setScanHistory] = useState([]);
-            const [showSettings, setShowSettings] = useState(false);
             const [showHistory, setShowHistory] = useState(false);
             const [zoomLevel, setZoomLevel] = useState(1);
             const [brightness, setBrightness] = useState(100);
             const [contrast, setContrast] = useState(100);
-            const videoRef = useRef(null);
-            const canvasRef = useRef(null);
-            const streamRef = useRef(null);
             const html5QrCodeRef = useRef(null);
 
-            // Sozlamalarni yuklash
+            // Tarixni yuklash
             useEffect(() => {
-                const savedToken = localStorage.getItem('botToken') || '';
-                const savedChatId = localStorage.getItem('chatId') || '';
                 const savedHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
-                
-                setBotToken(savedToken);
-                setChatId(savedChatId);
                 setScanHistory(savedHistory);
             }, []);
-
-            // Sozlamalarni saqlash
-            const saveSettings = (token, chat) => {
-                setBotToken(token);
-                setChatId(chat);
-                localStorage.setItem('botToken', token);
-                localStorage.setItem('chatId', chat);
-            };
 
             const startScanning = async () => {
                 try {
@@ -85,7 +87,8 @@
                     setScanning(true);
                     
                 } catch (err) {
-                    setError('Kameraga kirish xato: ' + err.message);
+                    setError('Kamerani ochishda xatolik. Iltimos, kameraga ruxsat bering.');
+                    console.error('Camera error:', err);
                 }
             };
 
@@ -144,41 +147,6 @@
                 }
             };
 
-            const sendToBot = async () => {
-                if (!botToken || !chatId || !result) {
-                    setError('Iltimos, barcha maydonlarni to\'ldiring');
-                    return;
-                }
-
-                try {
-                    setError('');
-                    setSuccess('');
-                    
-                    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            chat_id: chatId,
-                            text: `🔍 QR Code Natijasi\n━━━━━━━━━━━━━━━\n\n${result}\n\n📅 Vaqt: ${new Date().toLocaleString('uz-UZ')}\n\n❤️ Avantika Shifokor`,
-                            parse_mode: 'HTML'
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (data.ok) {
-                        setSuccess('✅ Xabar muvaffaqiyatli yuborildi!');
-                        setTimeout(() => setSuccess(''), 3000);
-                    } else {
-                        setError('Xatolik: ' + data.description);
-                    }
-                } catch (err) {
-                    setError('Yuborishda xatolik: ' + err.message);
-                }
-            };
-
             const copyToClipboard = (text) => {
                 navigator.clipboard.writeText(text).then(() => {
                     setSuccess('📋 Nusxalandi!');
@@ -227,7 +195,7 @@
                                         React.createElement('path', { d: "M3.05 13A9 9 0 1 0 12 3" }),
                                         React.createElement('path', { d: "M12 7v5l2 2" })
                                     ),
-                                    "Tarix"
+                                    "Skaner Tarixi"
                                 )
                             )
                         ),
@@ -239,7 +207,7 @@
                                         React.createElement('path', { d: "M3.05 13A9 9 0 1 0 12 3" }),
                                         React.createElement('path', { d: "M12 7v5l2 2" })
                                     ),
-                                    React.createElement('p', { className: "text-gray-600" }, "Hozircha tarix bo'sh")
+                                    React.createElement('p', { className: "text-gray-600" }, "Hozircha skaner tarixi bo'sh")
                                 ) :
                                 scanHistory.map((item) => 
                                     React.createElement('div', { key: item.id, className: "bg-white rounded-xl shadow p-4" },
@@ -258,78 +226,10 @@
                                         React.createElement('p', { className: "text-sm font-mono text-gray-800 break-all mb-3" }, item.data),
                                         React.createElement('button', { 
                                             onClick: () => copyToClipboard(item.data),
-                                            className: "text-xs text-emerald-600 font-semibold" 
+                                            className: "text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-semibold" 
                                         }, "📋 Nusxalash")
                                     )
                                 )
-                        )
-                    )
-                );
-            }
-
-            if (showSettings) {
-                return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50" },
-                    React.createElement('div', { className: "max-w-md mx-auto min-h-screen flex flex-col" },
-                        React.createElement('div', { className: "bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-6 shadow-lg" },
-                            React.createElement('div', { className: "flex items-center gap-3" },
-                                React.createElement('button', { onClick: () => setShowSettings(false), className: "text-white" },
-                                    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-                                        React.createElement('line', { x1: "18", y1: "6", x2: "6", y2: "18" }),
-                                        React.createElement('line', { x1: "6", y1: "6", x2: "18", y2: "18" })
-                                    )
-                                ),
-                                React.createElement('h1', { className: "text-2xl font-bold text-white flex items-center gap-2" },
-                                    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "28", height: "28", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-                                        React.createElement('path', { d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" }),
-                                        React.createElement('circle', { cx: "12", cy: "12", r: "3" })
-                                    ),
-                                    "Sozlamalar"
-                                )
-                            )
-                        ),
-                        React.createElement('div', { className: "flex-1 p-4 space-y-4" },
-                            React.createElement('div', { className: "bg-white rounded-2xl shadow-xl p-4" },
-                                React.createElement('h3', { className: "font-bold text-gray-900 text-lg mb-4" }, "Bot Sozlamalari"),
-                                React.createElement('div', { className: "space-y-4" },
-                                    React.createElement('div', null,
-                                        React.createElement('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Bot Token"),
-                                        React.createElement('input', {
-                                            type: "text",
-                                            value: botToken,
-                                            onChange: (e) => setBotToken(e.target.value),
-                                            placeholder: "1234567890:ABC...",
-                                            className: "w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                                        })
-                                    ),
-                                    React.createElement('div', null,
-                                        React.createElement('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Chat ID"),
-                                        React.createElement('input', {
-                                            type: "text",
-                                            value: chatId,
-                                            onChange: (e) => setChatId(e.target.value),
-                                            placeholder: "123456789",
-                                            className: "w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                                        })
-                                    ),
-                                    React.createElement('button', {
-                                        onClick: () => {
-                                            saveSettings(botToken, chatId);
-                                            setShowSettings(false);
-                                            setSuccess('✅ Sozlamalar saqlandi!');
-                                            setTimeout(() => setSuccess(''), 2000);
-                                        },
-                                        className: "w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-bold"
-                                    }, "Saqlash")
-                                )
-                            ),
-                            React.createElement('div', { className: "bg-blue-50 rounded-xl p-4 text-sm" },
-                                React.createElement('h4', { className: "font-bold text-blue-900 mb-2" }, "Yo'riqnoma"),
-                                React.createElement('ul', { className: "space-y-1 text-blue-800 text-xs" },
-                                    React.createElement('li', null, "• Bot Token: @BotFather dan oling"),
-                                    React.createElement('li', null, "• Chat ID: @userinfobot dan oling"),
-                                    React.createElement('li', null, "• Sozlamalar avtomatik saqlanadi")
-                                )
-                            )
                         )
                     )
                 );
@@ -346,12 +246,7 @@
                                     React.createElement('path', { d: "M12 7v5l2 2" })
                                 )
                             ),
-                            React.createElement('button', { onClick: () => setShowSettings(true), className: "text-white p-2" },
-                                React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-                                    React.createElement('path', { d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" }),
-                                    React.createElement('circle', { cx: "12", cy: "12", r: "3" })
-                                )
-                            )
+                            React.createElement('div', { className: "w-8" }) // Balans uchun bo'sh div
                         ),
                         React.createElement('div', { className: "flex justify-center mb-4" },
                             React.createElement('div', { className: "bg-white rounded-2xl p-4 shadow-xl" },
@@ -440,11 +335,11 @@
                             React.createElement('div', { className: "space-y-4" },
                                 React.createElement('div', null,
                                     React.createElement('div', { className: "flex justify-between mb-1" },
-                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Zoom: {Math.round(zoomLevel * 100)}%" ),
+                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Zoom: " + Math.round(zoomLevel * 100) + "%" ),
                                         React.createElement('button', {
                                             onClick: () => setZoomLevel(1),
                                             className: "text-xs text-emerald-600 font-semibold"
-                                        }, "Reset")
+                                        }, "Asl holat")
                                     ),
                                     React.createElement('input', {
                                         type: "range",
@@ -458,11 +353,11 @@
                                 ),
                                 React.createElement('div', null,
                                     React.createElement('div', { className: "flex justify-between mb-1" },
-                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Yorqinlik: {brightness}%" ),
+                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Yorqinlik: " + brightness + "%" ),
                                         React.createElement('button', {
                                             onClick: () => setBrightness(100),
                                             className: "text-xs text-emerald-600 font-semibold"
-                                        }, "Reset")
+                                        }, "Asl holat")
                                     ),
                                     React.createElement('input', {
                                         type: "range",
@@ -476,11 +371,11 @@
                                 ),
                                 React.createElement('div', null,
                                     React.createElement('div', { className: "flex justify-between mb-1" },
-                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Kontrast: {contrast}%" ),
+                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Kontrast: " + contrast + "%" ),
                                         React.createElement('button', {
                                             onClick: () => setContrast(100),
                                             className: "text-xs text-emerald-600 font-semibold"
-                                        }, "Reset")
+                                        }, "Asl holat")
                                     ),
                                     React.createElement('input', {
                                         type: "range",
@@ -532,16 +427,6 @@
                                 React.createElement('div', { className: "bg-emerald-50 rounded-lg p-3 border border-emerald-200" },
                                     React.createElement('p', { className: "text-emerald-900 break-all font-mono text-sm" }, result)
                                 )
-                            ),
-                            botToken && chatId && React.createElement('button', {
-                                onClick: sendToBot,
-                                className: "w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white py-4 rounded-xl font-bold hover:from-teal-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 text-lg"
-                            },
-                                React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-                                    React.createElement('line', { x1: "22", y1: "2", x2: "11", y2: "13" }),
-                                    React.createElement('polygon', { points: "22 2 15 22 11 13 2 9 22 2" })
-                                ),
-                                "Botga Yuborish"
                             ),
                             React.createElement('button', {
                                 onClick: () => {
