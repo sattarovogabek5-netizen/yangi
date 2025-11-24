@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -32,10 +32,13 @@
             const [scanHistory, setScanHistory] = useState([]);
             const [showSettings, setShowSettings] = useState(false);
             const [showHistory, setShowHistory] = useState(false);
+            const [zoomLevel, setZoomLevel] = useState(1);
+            const [brightness, setBrightness] = useState(100);
+            const [contrast, setContrast] = useState(100);
             const videoRef = useRef(null);
             const canvasRef = useRef(null);
             const streamRef = useRef(null);
-            const scanIntervalRef = useRef(null);
+            const html5QrCodeRef = useRef(null);
 
             // Sozlamalarni yuklash
             useEffect(() => {
@@ -62,79 +65,61 @@
                     setResult('');
                     setSuccess('');
                     
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: { 
-                            facingMode: 'environment',
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 }
-                        }
-                    });
+                    // HTML5 QR Code scannerini ishga tushirish
+                    html5QrCodeRef.current = new Html5Qrcode("reader");
                     
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                        streamRef.current = stream;
-                        setScanning(true);
-                        
-                        videoRef.current.onloadedmetadata = () => {
-                            videoRef.current.play();
-                            scanQRCode();
-                        };
-                    }
+                    const config = {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0,
+                        focusMode: "continuous"
+                    };
+                    
+                    await html5QrCodeRef.current.start(
+                        { facingMode: "environment" },
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                    
+                    setScanning(true);
+                    
                 } catch (err) {
                     setError('Kameraga kirish xato: ' + err.message);
                 }
             };
 
-            const stopScanning = () => {
-                if (streamRef.current) {
-                    streamRef.current.getTracks().forEach(track => track.stop());
-                    streamRef.current = null;
-                }
-                if (scanIntervalRef.current) {
-                    clearInterval(scanIntervalRef.current);
-                    scanIntervalRef.current = null;
-                }
-                setScanning(false);
+            const onScanSuccess = (decodedText, decodedResult) => {
+                setResult(decodedText);
+                stopScanning();
+                
+                // Tarixga qo'shish
+                const newHistory = [{
+                    data: decodedText,
+                    timestamp: new Date().toLocaleString('uz-UZ'),
+                    id: Date.now()
+                }, ...scanHistory].slice(0, 20);
+                setScanHistory(newHistory);
+                localStorage.setItem('scanHistory', JSON.stringify(newHistory));
+                
+                // Ovozli signal
+                playBeep();
             };
 
-            const scanQRCode = () => {
-                if (scanIntervalRef.current) {
-                    clearInterval(scanIntervalRef.current);
-                }
+            const onScanFailure = (error) => {
+                // Xatolarni ko'rsatmaslik mumkin, chunki bu doimiy ravishda chaqiriladi
+            };
 
-                scanIntervalRef.current = setInterval(() => {
-                    if (videoRef.current && canvasRef.current && window.jsQR) {
-                        const canvas = canvasRef.current;
-                        const video = videoRef.current;
-                        const context = canvas.getContext('2d');
-
-                        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
-                            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                            
-                            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                            const code = window.jsQR(imageData.data, imageData.width, imageData.height);
-
-                            if (code) {
-                                setResult(code.data);
-                                stopScanning();
-                                
-                                // Tarixga qo'shish
-                                const newHistory = [{
-                                    data: code.data,
-                                    timestamp: new Date().toLocaleString('uz-UZ'),
-                                    id: Date.now()
-                                }, ...scanHistory].slice(0, 20);
-                                setScanHistory(newHistory);
-                                localStorage.setItem('scanHistory', JSON.stringify(newHistory));
-                                
-                                // Ovozli signal
-                                playBeep();
-                            }
-                        }
+            const stopScanning = async () => {
+                if (html5QrCodeRef.current && scanning) {
+                    try {
+                        await html5QrCodeRef.current.stop();
+                        html5QrCodeRef.current.clear();
+                    } catch (err) {
+                        console.log("Scanner to'xtatishda xatolik:", err);
                     }
-                }, 300);
+                }
+                setScanning(false);
             };
 
             const playBeep = () => {
@@ -206,6 +191,18 @@
                 setScanHistory(newHistory);
                 localStorage.setItem('scanHistory', JSON.stringify(newHistory));
             };
+
+            const applyVideoFilters = () => {
+                const video = document.querySelector('#reader video');
+                if (video) {
+                    video.style.transform = `scale(${zoomLevel})`;
+                    video.style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+                }
+            };
+
+            useEffect(() => {
+                applyVideoFilters();
+            }, [zoomLevel, brightness, contrast]);
 
             useEffect(() => {
                 return () => {
@@ -424,13 +421,10 @@
                             React.createElement('p', { className: "text-green-800 text-sm" }, success)
                         ),
                         React.createElement('div', { className: "relative bg-white rounded-2xl shadow-xl overflow-hidden" },
-                            React.createElement('video', {
-                                ref: videoRef,
-                                className: `w-full h-64 object-cover ${scanning ? 'block' : 'hidden'}`,
-                                playsInline: true,
-                                autoPlay: true
+                            React.createElement('div', {
+                                id: "reader",
+                                className: `w-full h-64 ${scanning ? 'block' : 'hidden'}`
                             }),
-                            React.createElement('canvas', { ref: canvasRef, className: "hidden" }),
                             !scanning && !result && React.createElement('div', { className: "h-64 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center p-6" },
                                 React.createElement('div', { className: "bg-white rounded-full p-6 shadow-lg mb-4" },
                                     React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "48", height: "48", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: "text-emerald-600" },
@@ -439,10 +433,65 @@
                                     )
                                 ),
                                 React.createElement('p', { className: "text-gray-700 text-center font-medium" }, "QR code skanerlash uchun\nkamerani yoqing")
-                            ),
-                            scanning && React.createElement('div', { className: "absolute inset-0 pointer-events-none" },
-                                React.createElement('div', { className: "absolute inset-0 border-4 border-emerald-500 animate-pulse" }),
-                                React.createElement('div', { className: "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-4 border-red-500 rounded-lg" })
+                            )
+                        ),
+                        scanning && React.createElement('div', { className: "bg-white rounded-2xl shadow-xl p-4" },
+                            React.createElement('h3', { className: "font-bold text-gray-900 text-lg mb-3" }, "Kamera Sozlamalari"),
+                            React.createElement('div', { className: "space-y-4" },
+                                React.createElement('div', null,
+                                    React.createElement('div', { className: "flex justify-between mb-1" },
+                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Zoom: {Math.round(zoomLevel * 100)}%" ),
+                                        React.createElement('button', {
+                                            onClick: () => setZoomLevel(1),
+                                            className: "text-xs text-emerald-600 font-semibold"
+                                        }, "Reset")
+                                    ),
+                                    React.createElement('input', {
+                                        type: "range",
+                                        min: "1",
+                                        max: "3",
+                                        step: "0.1",
+                                        value: zoomLevel,
+                                        onChange: (e) => setZoomLevel(parseFloat(e.target.value)),
+                                        className: "w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    })
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('div', { className: "flex justify-between mb-1" },
+                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Yorqinlik: {brightness}%" ),
+                                        React.createElement('button', {
+                                            onClick: () => setBrightness(100),
+                                            className: "text-xs text-emerald-600 font-semibold"
+                                        }, "Reset")
+                                    ),
+                                    React.createElement('input', {
+                                        type: "range",
+                                        min: "50",
+                                        max: "200",
+                                        step: "5",
+                                        value: brightness,
+                                        onChange: (e) => setBrightness(parseInt(e.target.value)),
+                                        className: "w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    })
+                                ),
+                                React.createElement('div', null,
+                                    React.createElement('div', { className: "flex justify-between mb-1" },
+                                        React.createElement('span', { className: "text-sm font-medium text-gray-700" }, "Kontrast: {contrast}%" ),
+                                        React.createElement('button', {
+                                            onClick: () => setContrast(100),
+                                            className: "text-xs text-emerald-600 font-semibold"
+                                        }, "Reset")
+                                    ),
+                                    React.createElement('input', {
+                                        type: "range",
+                                        min: "50",
+                                        max: "200",
+                                        step: "5",
+                                        value: contrast,
+                                        onChange: (e) => setContrast(parseInt(e.target.value)),
+                                        className: "w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                    })
+                                )
                             )
                         ),
                         !scanning && !result && React.createElement('button', {
