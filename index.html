@@ -1,0 +1,3417 @@
+https://kvartira-hisobi.netlify.app/https://kvartira-hisobi.netlify.app/https://kvartira-hisobi.netlify.app/https://kvartira-hisobi.netlify.app/<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kvartira Hisobi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0e8;
+  --surface: #fffdf8;
+  --surface2: #f9f5ee;
+  --surface3: #f0ebe0;
+  --border: rgba(180,160,120,0.2);
+  --border2: rgba(180,160,120,0.4);
+  --text: #1a1510;
+  --sub: #8a7e6a;
+  --accent: #2d5be3;
+  --accent2: #0a8c6e;
+  --red: #c93030;
+  --green: #0a8c6e;
+  --orange: #c97020;
+  --yellow: #b89010;
+  --purple: #6b4fca;
+  --r: 20px;
+  --font: 'DM Sans', sans-serif;
+  --serif: 'DM Serif Display', serif;
+  --mono: 'JetBrains Mono', monospace;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 10%, rgba(45,91,227,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 90% 90%, rgba(10,140,110,0.04) 0%, transparent 60%);
+}
+
+/* Paper texture overlay */
+body::after {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  opacity:0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%23b0a080' opacity='0.3'/%3E%3C/svg%3E");
+}
+
+.screen { display: none; flex-direction: column; min-height: 100dvh; padding-bottom: 76px; position: relative; z-index:1; }
+.screen.active { display: flex; }
+.screen-full { display: none; flex-direction: column; min-height: 100dvh; position: relative; z-index:1; }
+.screen-full.active { display: flex; }
+
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.scroll::-webkit-scrollbar { display: none; }
+
+.icon { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* HEADER */
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(255,253,248,0.9);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(16px);
+}
+.hdr-title { font-size: 16px; font-weight: 600; letter-spacing: -.2px; color: var(--text); }
+.hdr-btn {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+}
+.hdr-btn:active { background: var(--accent); border-color: var(--accent); }
+.hdr-btn:active svg { stroke: #fff; }
+.hdr-btn svg { width:18px; height:18px; stroke: var(--text); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+/* BOTTOM NAV */
+.bot-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(255,253,248,0.95);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  backdrop-filter: blur(20px);
+}
+.nav-it {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; cursor: pointer; padding: 6px 4px;
+  transition: all .2s;
+}
+.nav-it svg { width:22px; height:22px; stroke: var(--sub); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; transition: all .2s; }
+.nav-it .lbl { font-size: 10px; font-weight: 700; color: var(--sub); letter-spacing: .4px; transition: all .2s; }
+.nav-it.on svg { stroke: var(--accent); }
+.nav-it.on .lbl { color: var(--accent); }
+
+/* PIN SCREEN */
+#pinScreen {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100dvh; padding: 48px 28px;
+  background: var(--bg); position: relative; z-index:10;
+}
+#pinScreen.active { display: flex; }
+
+.pin-logo {
+  width: 88px; height: 88px; border-radius: 28px;
+  background: linear-gradient(135deg, #f0ebe0 0%, #e8e0d0 100%);
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.8);
+  position: relative;
+}
+.pin-logo svg { width:44px; height:44px; }
+.pin-logo::after {
+  content:''; position:absolute; inset:0; border-radius:28px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%);
+  pointer-events:none;
+}
+
+.pin-h1 { font-family: var(--serif); font-size: 32px; font-weight: 400; margin-bottom: 8px; text-align: center; color: var(--text); }
+.pin-sub { font-size: 14px; color: var(--sub); text-align: center; margin-bottom: 44px; font-weight: 400; }
+
+.pin-dots { display: flex; gap: 16px; margin-bottom: 48px; }
+.pin-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border2);
+  background: transparent; transition: all .2s;
+}
+.pin-dot.on { background: var(--accent); border-color: var(--accent); transform: scale(1.15); box-shadow: 0 0 12px rgba(45,91,227,0.4); }
+.pin-dot.err { background: var(--red); border-color: var(--red); animation: shake .3s ease; }
+
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)}
+}
+
+.pin-keys {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  width: 100%; max-width: 290px;
+}
+.pin-key {
+  aspect-ratio: 1; border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 24px; font-weight: 600; font-family: var(--font);
+  color: var(--text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+.pin-key:active { transform: scale(0.88); background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 16px rgba(45,91,227,0.4); }
+.pin-key.ghost { background: transparent; border-color: transparent; box-shadow: none; cursor: default; pointer-events: none; }
+.pin-key.del { background: var(--surface2); }
+.pin-key.del svg { width:22px; height:22px; stroke: var(--orange); fill:none; stroke-width:2; stroke-linecap:round; }
+.pin-err { color: var(--red); font-size: 13px; font-weight: 600; margin-top: 24px; opacity: 0; transition: opacity .2s; }
+.pin-err.show { opacity: 1; }
+
+/* HOME */
+.home-hero {
+  margin: 16px; padding: 26px;
+  border-radius: 24px; position: relative; overflow: hidden;
+  min-height: 148px;
+}
+.home-hero.pos {
+  background: linear-gradient(135deg, #edf4ee 0%, #e0f0e8 100%);
+  border: 1px solid rgba(10,140,110,0.2);
+}
+.home-hero.neg {
+  background: linear-gradient(135deg, #f7ecec 0%, #f2e0e0 100%);
+  border: 1px solid rgba(201,48,48,0.15);
+}
+.hero-label { font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 10px; }
+.hero-amount { font-size: 44px; font-weight: 700; font-family: var(--mono); letter-spacing: -2px; margin-bottom: 10px; }
+.hero-amount.pos { color: var(--green); }
+.hero-amount.neg { color: var(--red); }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  letter-spacing:.3px;
+}
+.hero-badge.pos { background: rgba(10,140,110,0.1); color: var(--green); border: 1px solid rgba(10,140,110,0.2); }
+.hero-badge.neg { background: rgba(201,48,48,0.1); color: var(--red); border: 1px solid rgba(201,48,48,0.15); }
+.hero-user { position: absolute; top: 22px; right: 22px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.hero-glow {
+  position: absolute; bottom: -60px; right: -60px;
+  width: 180px; height: 180px; border-radius: 50%;
+  filter: blur(60px); opacity: .15; pointer-events: none;
+}
+.hero-glow.pos { background: var(--green); }
+.hero-glow.neg { background: var(--red); }
+
+.scan-big {
+  margin: 0 16px 12px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e8eeff 100%);
+  border: 1px solid rgba(45,91,227,0.2);
+  border-radius: 20px; padding: 18px 20px;
+  display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: all .18s;
+  box-shadow: var(--shadow);
+}
+.scan-big:active { transform: scale(0.98); border-color: var(--accent); }
+.scan-ico {
+  width: 52px; height: 52px; border-radius: 16px;
+  background: rgba(45,91,227,0.1); border: 1px solid rgba(45,91,227,0.15);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.scan-ico svg { width:26px; height:26px; stroke: var(--accent); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.scan-txt strong { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.scan-txt span { font-size: 12px; color: var(--sub); }
+.scan-arr { margin-left: auto; }
+.scan-arr svg { width:20px; height:20px; stroke: var(--accent); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+.home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 16px 12px; }
+.hg-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 18px 16px;
+  cursor: pointer; transition: all .18s;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.hg-card:active { background: var(--surface2); border-color: var(--border2); transform: scale(0.97); }
+.hg-ico {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.hg-ico svg { width:22px; height:22px; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.hg-txt strong { display: block; font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.hg-txt span { font-size: 11px; color: var(--sub); }
+
+.notice {
+  margin: 0 16px 16px;
+  background: rgba(10,140,110,0.06); border: 1px solid rgba(10,140,110,0.12);
+  border-radius: 14px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--accent2); font-weight: 600;
+}
+.notice svg { width:16px; height:16px; stroke: var(--accent2); fill:none; stroke-width:2; stroke-linecap:round; flex-shrink:0; }
+
+/* MEMBERS */
+.mbr-av {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #fff;
+  border: 2px solid transparent; transition: all .2s;
+  flex-shrink:0;
+}
+.mbr-av.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,91,227,0.2); }
+
+/* SECTION */
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 10px; }
+.sec-title { font-size: 15px; font-weight: 600; }
+.sec-action { font-size: 12px; color: var(--accent); font-weight: 700; cursor: pointer; letter-spacing:.2px; }
+
+/* CHECK CARDS */
+.check-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 16px 8px; cursor: pointer; transition: all .15s;
+  text-align: left; width: calc(100% - 32px);
+  font-family: var(--font);
+  box-shadow: var(--shadow);
+}
+.check-card:active { background: var(--surface2); border-color: var(--border2); }
+.av {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.ck-info { flex: 1; min-width: 0; }
+.ck-info strong { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
+.ck-info em { display: block; font-size: 12px; color: var(--sub); font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top:2px; }
+.ck-right { text-align: right; flex-shrink: 0; }
+.ck-amt { font-size: 15px; font-weight: 600; font-family: var(--mono); color: var(--text); }
+.ck-tag { font-size: 10px; color: var(--sub); font-weight: 700; margin-top: 3px; letter-spacing:.3px; }
+
+.sum-pill {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px;
+  margin: 4px 16px 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sum-pill strong { font-size: 15px; font-weight: 600; }
+.sum-pill span { font-size: 12px; color: var(--sub); font-weight: 600; }
+
+/* TABS */
+.tabs { display: flex; gap: 6px; padding: 12px 16px 8px; }
+.tab {
+  flex: 1; padding: 10px 4px; text-align: center;
+  border-radius: 12px; font-size: 11px; font-weight: 800;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--sub);
+  font-family: var(--font); transition: all .2s; letter-spacing: .5px;
+}
+.tab.on { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 16px rgba(45,91,227,0.3); }
+
+/* BALANS */
+.bal-hero {
+  margin: 16px; padding: 24px 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
+  border: 1px solid rgba(45,91,227,0.15);
+  display: flex; justify-content: space-between; align-items: flex-end;
+  position: relative; overflow:hidden;
+  box-shadow: var(--shadow);
+}
+.bal-hero::before {
+  content:''; position:absolute; top:-40px; right:-40px;
+  width:160px; height:160px; border-radius:50%;
+  background: radial-gradient(circle, rgba(45,91,227,0.08) 0%, transparent 70%);
+}
+.bal-left .lbl { font-size: 11px; color: var(--sub); font-weight: 700; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+.bal-left .amt { font-size: 36px; font-weight: 700; font-family: var(--mono); }
+.bal-left .st { font-size: 12px; font-weight: 700; margin-top: 6px; }
+.bal-right { width:52px; height:52px; border-radius:16px; background: rgba(45,91,227,0.1); border:1px solid rgba(45,91,227,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.bal-right svg { width:26px; height:26px; stroke: var(--accent); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+
+.bp-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 16px 8px; cursor: pointer; transition: all .15s;
+  box-shadow: var(--shadow);
+}
+.bp-card:active { background: var(--surface2); }
+.bp-info { flex: 1; }
+.bp-info strong { display: block; font-size: 14px; font-weight: 600; }
+.bp-info em { font-size: 12px; color: var(--sub); font-style: normal; }
+.bp-amt { font-size: 15px; font-weight: 700; font-family: var(--mono); }
+
+/* DETAIL */
+.detail-hero {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
+  border-bottom: 1px solid rgba(45,91,227,0.12);
+  padding: 32px 24px 28px; text-align: center;
+}
+.detail-hero .big { font-size: 42px; font-weight: 700; font-family: var(--mono); margin-bottom: 6px; }
+.detail-hero .lbl { font-size: 13px; color: var(--sub); font-weight: 500; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 20px; margin: 16px;
+  box-shadow: var(--shadow);
+}
+.card h4 { font-size: 13px; font-weight: 700; color: var(--sub); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 14px; }
+.detail-check {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.detail-check .l strong { display: block; font-size: 14px; font-weight: 600; }
+.detail-check .l em { font-size: 12px; color: var(--sub); font-style: normal; }
+.detail-check .r { font-size: 14px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+
+/* YEMIMAN */
+.toggle-row {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px; margin: 0 16px 8px;
+  box-shadow: var(--shadow);
+}
+.tog-ico { width:40px; height:40px; border-radius:12px; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tog-txt { flex: 1; }
+.tog-txt strong { display: block; font-size: 14px; font-weight: 600; }
+.tog-txt em { font-size: 12px; color: var(--sub); font-style: normal; }
+.toggle {
+  width: 52px; height: 30px; border-radius: 15px;
+  background: var(--surface3); border: 1px solid var(--border);
+  position: relative; cursor: pointer; transition: all .25s;
+  flex-shrink: 0;
+}
+.toggle::after {
+  content: ''; position: absolute; left: 3px; top: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--sub); transition: all .25s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.toggle.on { background: rgba(45,91,227,0.15); border-color: rgba(45,91,227,0.3); }
+.toggle.on::after { transform: translateX(22px); background: var(--accent); }
+
+/* SCANNER */
+.scan-file-input { display: none; }
+.scan-area {
+  margin: 16px; border-radius: 24px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 100%);
+  border: 2px dashed rgba(45,91,227,0.3);
+  padding: 40px 24px; display: flex; flex-direction: column;
+  align-items: center; gap: 20px; cursor: pointer; transition: all .2s;
+}
+.scan-area:active { border-color: var(--accent); background: rgba(45,91,227,0.08); }
+.scan-anim {
+  width: 120px; height: 120px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.scan-corner {
+  position: absolute; width: 24px; height: 24px;
+  border-color: var(--accent); border-style: solid;
+}
+.scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.scan-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.scan-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+.scan-ico-center svg { width:44px; height:44px; stroke:var(--accent); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.scan-line-anim {
+  position: absolute; left: 8%; right: 8%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanLine 2s ease-in-out infinite;
+}
+@keyframes scanLine {
+  0%{top:10%;} 50%{top:90%;} 100%{top:10%;}
+}
+.scan-area-txt strong { font-size: 15px; font-weight: 600; color: var(--text); display: block; text-align: center; }
+.scan-area-txt span { font-size: 13px; color: var(--sub); display: block; text-align: center; margin-top: 4px; }
+.scan-receipt-btn {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  width: calc(100% - 32px); margin: 0 16px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px; font-size: 14px; font-weight: 600;
+  color: var(--text); cursor: pointer; font-family: var(--font);
+  box-shadow: var(--shadow); transition: all .18s;
+}
+.scan-receipt-btn:active { background: var(--surface2); }
+.scan-receipt-btn svg { width:18px; height:18px; stroke: var(--accent); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+/* XODIM */
+.xod-hero {
+  background: linear-gradient(160deg, #f0f4ff 0%, #e8eeff 100%);
+  border-bottom: 1px solid rgba(45,91,227,0.12);
+  padding: 28px 20px 20px;
+}
+.xod-greet { font-size: 13px; color: var(--sub); font-weight: 500; margin-bottom: 4px; }
+.xod-name { font-family: var(--serif); font-size: 28px; font-weight: 400; color: var(--text); }
+.xod-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 16px;
+}
+.xod-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.xod-stat .v { font-size: 18px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.xod-stat .l { font-size: 11px; color: var(--sub); font-weight: 600; margin-top: 4px; }
+.xod-row {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px; margin: 0 16px 8px;
+  cursor: pointer; text-align: left; font-family: var(--font);
+  box-shadow: var(--shadow); transition: all .15s;
+  font-size: 14px; font-weight: 600; color: var(--text);
+}
+.xod-row:active { background: var(--surface2); }
+.xod-row-ico { width:38px; height:38px; border-radius:12px; background:var(--surface2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.xod-row .arr { margin-left: auto; }
+.xod-row .arr svg { width:18px; height:18px; stroke: var(--sub); fill:none; stroke-width:2; stroke-linecap:round; }
+.logout-btn {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  width: calc(100% - 32px); margin: 8px 16px 16px;
+  background: rgba(201,48,48,0.06); border: 1px solid rgba(201,48,48,0.15);
+  border-radius: 16px; padding: 16px; font-size: 14px; font-weight: 600;
+  color: var(--red); cursor: pointer; font-family: var(--font); transition: all .2s;
+}
+.logout-btn svg { width:18px; height:18px; stroke: var(--red); fill:none; stroke-width:1.8; stroke-linecap:round; }
+
+/* STATS */
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 20px; margin: 0 16px 12px;
+  box-shadow: var(--shadow);
+}
+.stat-card h3 { font-size: 13px; font-weight: 700; color: var(--sub); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 16px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-name { width: 28px; font-size: 11px; font-weight: 700; color: var(--sub); flex-shrink: 0; }
+.bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; min-width: 2px; }
+.bar-val { width: 80px; text-align: right; font-size: 11px; font-weight: 700; color: var(--text); font-family: var(--mono); flex-shrink: 0; }
+
+/* BP CARD */
+.bp-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.bp-info { flex: 1; min-width: 0; }
+.bp-info strong { display: block; font-size: 14px; font-weight: 600; }
+.bp-info em { display: block; font-size: 12px; color: var(--sub); font-style: normal; margin-top: 2px; }
+
+.settings-section { padding: 0 16px 8px; }
+.settings-section h3 { font-size: 12px; font-weight: 700; color: var(--sub); letter-spacing: .6px; text-transform: uppercase; margin-bottom: 10px; padding: 14px 0 0; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 700; color: var(--sub); letter-spacing: .4px; text-transform: uppercase; margin-bottom: 8px; }
+.form-input {
+  width: 100%; padding: 13px 16px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 15px; color: var(--text); font-family: var(--font);
+  box-shadow: var(--shadow); transition: border-color .2s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,91,227,0.1); }
+.form-select {
+  width: 100%; padding: 13px 16px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 15px; color: var(--text); font-family: var(--font);
+  box-shadow: var(--shadow); outline: none; appearance: none;
+}
+.btn-main {
+  width: 100%; padding: 16px; border-radius: 16px;
+  background: var(--accent); border: none; color: #fff;
+  font-size: 15px; font-weight: 700; cursor: pointer; font-family: var(--font);
+  box-shadow: 0 4px 20px rgba(45,91,227,0.35); margin-bottom: 10px; transition: all .2s;
+  letter-spacing: -.1px;
+}
+.btn-main:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(45,91,227,0.3); }
+.btn-sec {
+  width: 100%; padding: 14px; border-radius: 16px;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--sub);
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font);
+}
+
+/* OVERLAYS */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+  align-items: flex-end;
+}
+.overlay.open { display: flex; }
+.sheet {
+  background: var(--surface); border-radius: 28px 28px 0 0;
+  padding: 20px 20px calc(32px + env(safe-area-inset-bottom));
+  width: 100%; max-height: 90dvh; overflow-y: auto;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+}
+.sheet::-webkit-scrollbar { display: none; }
+.sheet-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: var(--border2); margin: 0 auto 20px;
+}
+.sheet-title { font-family: var(--serif); font-size: 22px; font-weight: 400; margin-bottom: 20px; }
+
+/* RECEIPT */
+.rcpt-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.rcpt-item .name { font-size: 14px; font-weight: 500; flex: 1; }
+.rcpt-item .price { font-size: 14px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.rcpt-total { display: flex; justify-content: space-between; padding: 14px 0 0; font-size: 18px; font-weight: 700; }
+.rcpt-total span:last-child { font-family: var(--mono); color: var(--accent2); }
+.rcpt-meta { font-size: 12px; color: var(--sub); padding: 8px 0; }
+.rcpt-excluded { background: rgba(201,48,48,0.06); border: 1px solid rgba(201,48,48,0.15); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: var(--red); font-weight: 600; margin-top: 10px; display: none; }
+
+/* EXCL CHIPS */
+.excl-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.excl-chip {
+  padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--sub);
+  cursor: pointer; transition: all .2s; font-family: var(--font);
+}
+.excl-chip.on { background: rgba(201,48,48,0.1); border-color: rgba(201,48,48,0.2); color: var(--red); }
+
+/* DATE LABEL */
+.date-lbl { font-size: 12px; color: var(--sub); font-weight: 700; padding: 4px 20px 8px; letter-spacing: .3px; }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center; padding: 48px 24px; color: var(--sub);
+}
+.empty-state .ico { width: 64px; height: 64px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.empty-state .ico svg { width: 28px; height: 28px; stroke: var(--sub); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.empty-state p { font-size: 14px; font-weight: 500; }
+
+/* AVATARS */
+.av0 { background: linear-gradient(135deg,#4f72ff,#2d5be3); }
+.av1 { background: linear-gradient(135deg,#0a8c6e,#067a5d); }
+.av2 { background: linear-gradient(135deg,#c97020,#b05a10); }
+.av3 { background: linear-gradient(135deg,#c93030,#a82020); }
+.av4 { background: linear-gradient(135deg,#6b4fca,#5a3db8); }
+.av5 { background: linear-gradient(135deg,#8a7e6a,#6e6255); }
+
+/* TOAST */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+  max-width: 340px; width: calc(100% - 40px);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow-lg);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+  z-index: 999;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast-ico { width: 38px; height: 38px; border-radius: 12px; background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.toast-ico svg { width: 20px; height: 20px; }
+.toast-txt strong { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
+.toast-txt span { display: block; font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+/* RECEIPT ANIMATION OVERLAY */
+.receipt-anim-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(160deg, #0d1117 0%, #1a2035 100%);
+  align-items: center; justify-content: center;
+  flex-direction: column;
+  padding: 32px 24px;
+}
+.receipt-anim-overlay.show { display: flex; }
+
+/* Printer scene wrapper */
+.printer-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Glow under printer */
+.printer-glow {
+  position: absolute;
+  bottom: -20px; left: 50%; transform: translateX(-50%);
+  width: 140px; height: 40px;
+  background: radial-gradient(ellipse, rgba(45,91,227,0.25) 0%, transparent 70%);
+  animation: glowPulse 1s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes glowPulse { 0%,100%{opacity:0.6; transform:translateX(-50%) scaleX(1);} 50%{opacity:1; transform:translateX(-50%) scaleX(1.1);} }
+
+.receipt-machine {
+  width: 180px; height: 108px;
+  background: linear-gradient(180deg, #3e3e3e 0%, #2a2a2a 55%, #1e1e1e 100%);
+  border-radius: 20px 20px 8px 8px;
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    0 16px 48px rgba(0,0,0,0.75),
+    0 2px 0 rgba(255,255,255,0.1) inset,
+    0 -3px 0 rgba(0,0,0,0.6) inset,
+    2px 0 0 rgba(255,255,255,0.05) inset;
+  flex-shrink: 0;
+}
+/* Scan slot */
+.receipt-machine::before {
+  content: '';
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  width: 110px; height: 16px;
+  background: linear-gradient(180deg, #0d0d0d 0%, #181818 100%);
+  border-radius: 5px;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,1), 0 1px 0 rgba(255,255,255,0.04);
+}
+/* Paper exit slot */
+.receipt-machine::after {
+  content: '';
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 72px; height: 12px;
+  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+  border-radius: 0 0 8px 8px;
+  box-shadow: inset 0 4px 8px rgba(0,0,0,0.9);
+}
+/* Green LED */
+.machine-led {
+  position: absolute; top: 14px; right: 20px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #8fff8f, #00dd00);
+  box-shadow: 0 0 8px 3px rgba(0,230,0,0.55);
+  animation: ledBlink 1s ease-in-out infinite;
+}
+@keyframes ledBlink {
+  0%,100%{ box-shadow: 0 0 8px 3px rgba(0,230,0,0.55); }
+  50%    { box-shadow: 0 0 2px 1px rgba(0,230,0,0.15); background: #007700; }
+}
+/* Power dot */
+.machine-btn {
+  position: absolute; top: 15px; left: 20px;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #666, #222);
+  border: 1.5px solid #111;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+/* Moving scan beam inside slot */
+.printer-scanline {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  width: 108px; height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(45,91,227,0.8) 30%, rgba(100,160,255,1) 50%, rgba(45,91,227,0.8) 70%, transparent 100%);
+  border-radius: 2px;
+  animation: scannerMove 0.6s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(45,91,227,0.6);
+}
+@keyframes scannerMove {
+  0%,100%{ opacity: 0.3; width: 60px; }
+  50%    { opacity: 1;   width: 108px; }
+}
+
+/* Paper */
+.receipt-paper {
+  position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+  width: 68px;
+  background: linear-gradient(180deg, #faf6ed 0%, #fffdf8 100%);
+  border-radius: 0 0 4px 4px;
+  overflow: hidden;
+  height: 0;
+  animation: paperOut 2.2s cubic-bezier(.15,.7,.25,1) 0.3s forwards;
+  box-shadow: 4px 8px 24px rgba(0,0,0,0.45), -2px 0 0 rgba(0,0,0,0.08);
+  z-index: 10;
+}
+@keyframes paperOut {
+  0%   { height: 0; }
+  15%  { height: 14px; }
+  35%  { height: 42px; }
+  60%  { height: 80px; }
+  80%  { height: 108px; }
+  100% { height: 118px; }
+}
+.receipt-paper-inner { padding: 9px 7px 4px; }
+/* Each line fades in as paper prints */
+.r-line  { height: 2px; background: #bdb49a; margin: 3px 0; border-radius: 1px; opacity:0; animation: printLine 0.12s ease both; }
+.r-bold  { height: 3px; background: #444;    margin: 3px 0; border-radius: 1px; opacity:0; animation: printLine 0.12s ease both; }
+.r-short { height: 2px; background: #ccc;    margin: 2px 0; border-radius: 1px; width: 55%; opacity:0; animation: printLine 0.12s ease both; }
+.r-total { height: 4px; background: var(--accent); margin: 5px 0 3px; border-radius: 2px; box-shadow: 0 0 6px rgba(45,91,227,0.5); opacity:0; animation: printLine 0.15s ease both; }
+
+.r-line:nth-child(1)  { animation-delay:0.5s; }
+.r-line:nth-child(2)  { animation-delay:0.7s; }
+.r-bold:nth-child(3)  { animation-delay:0.9s; }
+.r-short:nth-child(4) { animation-delay:1.05s; }
+.r-line:nth-child(5)  { animation-delay:1.2s; }
+.r-line:nth-child(6)  { animation-delay:1.35s; }
+.r-total:nth-child(7) { animation-delay:1.55s; }
+.r-short:nth-child(8) { animation-delay:1.75s; }
+
+@keyframes printLine {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.receipt-anim-msg {
+  margin-top: 40px;
+  font-family: var(--font);
+  font-size: 20px; font-weight: 700;
+  color: #fff;
+  text-align: center;
+  letter-spacing: -.3px;
+  animation: fadeInUp 0.4s ease 0.6s both;
+  max-width: 280px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.receipt-anim-sub {
+  margin-top: 10px;
+  font-size: 14px; color: rgba(255,255,255,0.5);
+  text-align: center;
+  animation: fadeInUp 0.4s ease 0.8s both;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.receipt-checkmark {
+  width: 68px; height: 68px; border-radius: 50%;
+  background: rgba(10,140,110,0.12);
+  border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  margin: 30px auto 0;
+  animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1) 2.2s both;
+  box-shadow: 0 0 28px rgba(10,140,110,0.35);
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.2) rotate(-20deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.receipt-checkmark svg { width: 34px; height: 34px; stroke: var(--green); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* PUSH BANNER */
+.push-banner {
+  margin: 12px 16px 0; padding: 14px 16px; border-radius: 16px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e8eeff 100%);
+  border: 1px solid rgba(45,91,227,0.2);
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.push-banner svg { width:20px; height:20px; stroke: var(--accent); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.push-banner-txt { flex: 1; font-size: 12px; color: var(--sub); line-height: 1.5; }
+.push-banner-txt strong { color: var(--accent); display: block; font-size: 13px; }
+.push-btn {
+  padding: 8px 14px; border-radius: 10px;
+  background: var(--accent); border: none; color: #fff;
+  font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font);
+  flex-shrink: 0; white-space: nowrap;
+}
+
+/* DATA EXPORT/IMPORT */
+.data-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: calc(100% - 32px); margin: 0 16px 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 16px; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text);
+  box-shadow: var(--shadow); transition: all .15s;
+}
+.data-btn:active { background: var(--surface2); }
+.data-btn svg { width:18px; height:18px; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.danger-btn {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  width: calc(100% - 32px); margin: 4px 16px 16px;
+  background: rgba(201,48,48,0.06); border: 1px solid rgba(201,48,48,0.15);
+  border-radius: 14px; padding: 14px; cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--red);
+}
+.danger-btn svg { width:18px; height:18px; stroke: var(--red); fill:none; stroke-width:1.8; stroke-linecap:round; }
+
+/* CHECK DETAIL MODAL */
+.chk-detail-header {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0 20px; text-align: center;
+}
+.chk-detail-store {
+  font-family: var(--serif); font-size: 22px; font-weight: 400;
+  color: var(--text); margin-bottom: 6px; line-height: 1.2;
+}
+.chk-detail-amt {
+  font-size: 38px; font-weight: 700; font-family: var(--mono);
+  color: var(--accent); letter-spacing: -2px; margin: 8px 0;
+}
+.chk-detail-meta {
+  font-size: 12px; color: var(--sub); font-weight: 500;
+}
+.chk-detail-who {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 16px; margin: 12px 0;
+}
+.chk-detail-who .av { width: 36px; height: 36px; font-size: 13px; }
+.chk-detail-items-title {
+  font-size: 11px; font-weight: 700; color: var(--sub);
+  text-transform: uppercase; letter-spacing: .6px;
+  padding: 10px 0 6px;
+}
+.chk-items-list {
+  max-height: 200px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface2);
+}
+.chk-items-list::-webkit-scrollbar { display: none; }
+.chk-item-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 14px; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.chk-item-row:last-child { border-bottom: none; }
+.chk-item-name { color: var(--text); flex: 1; margin-right: 8px; }
+.chk-item-price { color: var(--sub); font-family: var(--mono); font-size: 12px; flex-shrink: 0; }
+.btn-danger-full {
+  width: 100%; padding: 14px; border-radius: 16px; margin-top: 8px;
+  background: rgba(201,48,48,0.08); border: 1.5px solid rgba(201,48,48,0.2);
+  color: var(--red); font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: var(--font); display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .15s;
+}
+.btn-danger-full:active { background: rgba(201,48,48,0.15); }
+.btn-danger-full svg { width: 16px; height: 16px; stroke: var(--red); fill: none; stroke-width: 2; stroke-linecap: round; }
+
+
+.proverka-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; padding: 8px 14px; border-radius: 10px; margin-top: 8px;
+  font-weight: 600;
+}
+.proverka-status.ok { background: rgba(10,140,110,0.08); color: var(--green); border: 1px solid rgba(10,140,110,0.15); }
+.proverka-status.err { background: rgba(201,48,48,0.08); color: var(--red); border: 1px solid rgba(201,48,48,0.15); }
+.scan-method-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+  letter-spacing: .3px; margin-bottom: 10px;
+}
+.scan-method-badge.qr { background: rgba(10,140,110,0.1); color: var(--green); border: 1px solid rgba(10,140,110,0.2); }
+.scan-method-badge.ai { background: rgba(45,91,227,0.1); color: var(--accent); border: 1px solid rgba(45,91,227,0.2); }
+
+/* SCAN PROGRESS OVERLAY */
+.scan-progress-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 24px;
+}
+.scan-progress-overlay.open { display: flex; }
+.scan-progress-box {
+  background: var(--surface); border-radius: 28px;
+  padding: 28px 24px; width: 100%; max-width: 380px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+}
+.sp-title { font-family: var(--serif); font-size: 22px; margin-bottom: 24px; text-align: center; }
+.sp-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  transition: all .3s;
+}
+.sp-step:last-child { border-bottom: none; }
+.sp-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 18px;
+  background: var(--surface2); border: 1px solid var(--border);
+  transition: all .3s;
+}
+.sp-icon.spin { animation: spSpin 1s linear infinite; }
+.sp-icon.done { background: rgba(10,140,110,0.1); border-color: rgba(10,140,110,0.3); }
+.sp-icon.err  { background: rgba(201,48,48,0.1);  border-color: rgba(201,48,48,0.25); }
+.sp-icon.wait { opacity: 0.35; }
+@keyframes spSpin { to { transform: rotate(360deg); } }
+.sp-text { flex: 1; }
+.sp-text strong { display: block; font-size: 14px; font-weight: 600; }
+.sp-text em { font-size: 12px; color: var(--sub); font-style: normal; margin-top: 2px; display: block; }
+.sp-cancel { margin-top: 20px; width: 100%; padding: 13px; border-radius: 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font);
+  color: var(--sub); }
+
+/* SWIPE TO DELETE — receipt items */
+.rcpt-item-wrap {
+  position: relative; overflow: hidden;
+}
+.rcpt-item-inner {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  transition: transform 0.25s ease;
+  touch-action: pan-y;
+  user-select: none;
+}
+.rcpt-item-wrap.excluded .rcpt-item-inner {
+  opacity: 0.4;
+}
+.rcpt-delete-reveal {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 80px; display: flex; align-items: center; justify-content: center;
+  background: var(--red); border-radius: 8px;
+  opacity: 0; transition: opacity 0.2s;
+  pointer-events: none;
+}
+.rcpt-delete-reveal svg { stroke: #fff; fill: none; width: 22px; height: 22px; stroke-width: 2; stroke-linecap: round; }
+.rcpt-item-wrap.swiped .rcpt-item-inner { transform: translateX(-80px); }
+.rcpt-item-wrap.swiped .rcpt-delete-reveal { opacity: 1; pointer-events: auto; }
+
+/* CAMERA QR OVERLAY */
+.cam-overlay {
+  display: none; position: fixed; inset: 0; z-index: 600;
+  background: #000; flex-direction: column;
+}
+.cam-overlay.open { display: flex; }
+.cam-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; background: rgba(0,0,0,0.7);
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+}
+.cam-header-title { color: #fff; font-size: 16px; font-weight: 600; }
+.cam-close-btn {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.cam-close-btn svg { stroke: #fff; fill: none; width: 18px; height: 18px; stroke-width: 2; stroke-linecap: round; }
+#camVideo {
+  width: 100%; height: 100%; object-fit: cover;
+}
+#camCanvas { display: none; }
+.cam-frame {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(70vw, 280px); height: min(70vw, 280px);
+  pointer-events: none;
+}
+.cam-frame::before {
+  content: ''; position: absolute; inset: 0;
+  border: 2px solid rgba(255,255,255,0.15); border-radius: 16px;
+  background: rgba(0,0,0,0.1);
+}
+.cam-corner2 {
+  position: absolute; width: 28px; height: 28px;
+  border-color: var(--accent); border-style: solid;
+}
+.cam-corner2.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 8px 0 0 0; }
+.cam-corner2.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 8px 0 0; }
+.cam-corner2.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 8px; }
+.cam-corner2.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 8px 0; }
+.cam-scanline {
+  position: absolute; left: 4px; right: 4px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  border-radius: 1px;
+  animation: camScan 1.8s ease-in-out infinite;
+  top: 50%;
+}
+@keyframes camScan {
+  0%   { top: 8%;  opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 92%; opacity: 0; }
+}
+.cam-hint {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.7); padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
+  text-align: center;
+}
+.cam-hint p { color: rgba(255,255,255,0.8); font-size: 13px; margin-bottom: 12px; }
+.cam-gallery-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px; padding: 10px 20px; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font);
+}
+.cam-status {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, calc(-50% + min(38vw, 155px) + 16px));
+  background: rgba(0,0,0,0.65); border-radius: 20px; padding: 6px 16px;
+  color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600;
+  white-space: nowrap;
+}
+.cam-found {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(10,140,110,0.25); opacity: 0;
+  transition: opacity .3s;
+}
+.cam-found.show { opacity: 1; }
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+</head>
+
+<body>
+
+<!-- CAMERA QR OVERLAY -->
+<div class="cam-overlay" id="camOverlay">
+  <video id="camVideo" playsinline autoplay muted></video>
+  <canvas id="camCanvas"></canvas>
+  <!-- Ruxsat kutilmoqda hint -->
+  <div id="camPermHint" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.85);z-index:20;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;">
+    <div style="width:72px;height:72px;border-radius:50%;background:rgba(45,91,227,0.2);border:2px solid rgba(45,91,227,0.4);display:flex;align-items:center;justify-content:center;margin-bottom:20px;animation:glowPulse 1.2s ease-in-out infinite;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#6b9fff" stroke-width="1.8" stroke-linecap="round" width="32" height="32"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </div>
+    <div style="color:#fff;font-size:17px;font-weight:700;margin-bottom:10px;">Kamera ruxsatini bering</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:13px;line-height:1.7;">Yuqorida chiqqan so'rovda<br><strong style="color:#fff;">"Ruxsat berish"</strong> ni bosing</div>
+  </div>
+  <div class="cam-header">
+    <div class="cam-close-btn" onclick="stopCamera()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="cam-header-title">📷 QR Skaner</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="cam-frame">
+    <div class="cam-corner2 tl"></div>
+    <div class="cam-corner2 tr"></div>
+    <div class="cam-corner2 bl"></div>
+    <div class="cam-corner2 br"></div>
+    <div class="cam-scanline"></div>
+  </div>
+  <div class="cam-found" id="camFound"></div>
+  <div class="cam-status" id="camStatus">Chek QR kodini ramkaga to'g'rilang</div>
+  <div class="cam-hint">
+    <p>Chekdagi QR kodni ramka ichiga to'g'rilang</p>
+    <button class="cam-gallery-btn" onclick="document.getElementById('scanFileInput').click(); stopCamera();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Galereadan tanlash
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+
+<!-- SCAN PROGRESS OVERLAY -->
+<div class="scan-progress-overlay" id="scanProgressOverlay">
+  <div class="scan-progress-box">
+    <div class="sp-title">🔍 Chek skanerlanmoqda</div>
+    <div class="sp-step" id="spStep1">
+      <div class="sp-icon wait" id="spIcon1">📷</div>
+      <div class="sp-text">
+        <strong>Rasm yuborilmoqda</strong>
+        <em id="spTxt1">Kutilmoqda...</em>
+      </div>
+    </div>
+    <div class="sp-step" id="spStep2">
+      <div class="sp-icon wait" id="spIcon2">🌐</div>
+      <div class="sp-text">
+        <strong>Chek ma'lumotlari olinmoqda</strong>
+        <em id="spTxt2">Kutilmoqda...</em>
+      </div>
+    </div>
+    <button class="sp-cancel" id="spCancelBtn" onclick="cancelScanProgress()">Bekor qilish</button>
+  </div>
+</div>
+
+<!-- RECEIPT ANIMATION OVERLAY -->
+<div class="receipt-anim-overlay" id="receiptAnimOverlay">
+  <div class="printer-scene">
+    <div class="printer-glow"></div>
+    <div class="receipt-machine">
+      <div class="machine-led"></div>
+      <div class="machine-btn"></div>
+      <div class="printer-scanline"></div>
+      <div class="receipt-paper" id="receiptPaper">
+        <div class="receipt-paper-inner">
+          <div class="r-line"></div>
+          <div class="r-line"></div>
+          <div class="r-bold"></div>
+          <div class="r-short"></div>
+          <div class="r-line"></div>
+          <div class="r-line"></div>
+          <div class="r-total"></div>
+          <div class="r-short"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="receipt-checkmark" id="receiptCheckmark">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="receipt-anim-msg" id="receiptAnimMsg">Chek qo'shildi!</div>
+  <div class="receipt-anim-sub" id="receiptAnimSub">Cheklar ro'yxatiga qo'shildi ✅</div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-ico" id="toastIco"></div>
+  <div class="toast-txt">
+    <strong id="toastTitle"></strong>
+    <span id="toastBody"></span>
+  </div>
+</div>
+
+<!-- PIN SCREEN -->
+<div id="pinScreen" class="active">
+  <div class="pin-logo">
+    <svg viewBox="0 0 44 44" fill="none">
+      <rect x="8" y="6" width="28" height="32" rx="5" fill="#e8e0d0" stroke="#b0a080" stroke-width="1.5"/>
+      <rect x="14" y="14" width="16" height="2" rx="1" fill="#8a7e6a"/>
+      <rect x="14" y="19" width="16" height="2" rx="1" fill="#8a7e6a"/>
+      <rect x="14" y="24" width="10" height="2" rx="1" fill="#8a7e6a"/>
+      <circle cx="32" cy="30" r="8" fill="#2d5be3"/>
+      <path d="M28.5 30l2.5 2.5 4-4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="pin-h1">Kvartira Hisobi</div>
+  <div class="pin-sub">PIN kodingizni kiriting</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-keys">
+    <button class="pin-key" onclick="pinTap('1')">1</button>
+    <button class="pin-key" onclick="pinTap('2')">2</button>
+    <button class="pin-key" onclick="pinTap('3')">3</button>
+    <button class="pin-key" onclick="pinTap('4')">4</button>
+    <button class="pin-key" onclick="pinTap('5')">5</button>
+    <button class="pin-key" onclick="pinTap('6')">6</button>
+    <button class="pin-key" onclick="pinTap('7')">7</button>
+    <button class="pin-key" onclick="pinTap('8')">8</button>
+    <button class="pin-key" onclick="pinTap('9')">9</button>
+    <button class="pin-key ghost"></button>
+    <button class="pin-key" onclick="pinTap('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">
+      <svg viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+    </button>
+  </div>
+  <div class="pin-err" id="pinErr">Noto'g'ri parol, qayta urinib ko'ring</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+
+<!-- HOME -->
+<div class="screen active" id="s-home">
+  <div class="hdr">
+    <div class="hdr-btn">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <div class="hdr-title">Asosiy</div>
+      <div id="syncStatus" style="font-size:10px;font-weight:700;letter-spacing:.3px;transition:all .3s;"></div>
+    </div>
+    <div class="hdr-btn" id="notifBell" onclick="handleBellClick()">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+  </div>
+  <div class="scroll">
+    <!-- Cloud setup banner -->
+    <div id="cloudSetupBanner" style="display:none;margin:12px 16px 0;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#fff8e8,#fff3d0);border:1px solid rgba(185,144,16,0.25);gap:12px;align-items:flex-start;">
+      <div style="font-size:20px;flex-shrink:0;">☁️</div>
+      <div style="flex:1;">
+        <strong style="display:block;font-size:13px;color:#7a5c00;margin-bottom:4px;">Bulut sinxronizatsiya sozlanmagan</strong>
+        <div style="font-size:12px;color:#9a7a20;line-height:1.6;">
+          Hamma qurilmada bir xil ma'lumot ko'rish uchun:<br>
+          1. <a href="https://jsonbin.io" target="_blank" style="color:#2d5be3;">jsonbin.io</a> da bepul hisob oching<br>
+          2. Bin yarating → API key oling<br>
+          3. HTML faylda <code style="background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px;">JSONBIN_ID</code> va <code style="background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px;">JSONBIN_KEY</code> ni o'zgartiring
+        </div>
+      </div>
+    </div>
+    <div id="pushBanner"></div>
+    <div id="homeHero" class="home-hero pos" style="margin:16px;">
+      <div class="hero-label">Mening balansim</div>
+      <div class="hero-amount pos" id="homeAmt">+0 ₽</div>
+      <div class="hero-badge pos" id="homeBadge">✦ Haqdor</div>
+      <div class="hero-user" id="heroUser"></div>
+      <div class="hero-glow pos" id="heroGlow"></div>
+    </div>
+    <div class="scan-big" onclick="go('scanner')">
+      <div class="scan-ico">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div class="scan-txt">
+        <strong>Chek skaner qilish</strong>
+        <span>QR kodli chekni suratga oling</span>
+      </div>
+      <div class="scan-arr">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+    <div class="home-grid">
+      <div class="hg-card" onclick="go('yemiman')">
+        <div class="hg-ico" style="background:rgba(201,48,48,0.08);">
+          <svg viewBox="0 0 24 24" style="stroke:#c93030;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        </div>
+        <div class="hg-txt"><strong>Men yemiman</strong><span>Mahsulot filtri</span></div>
+      </div>
+      <div class="hg-card" onclick="go('checks')">
+        <div class="hg-ico" style="background:rgba(45,91,227,0.08);">
+          <svg viewBox="0 0 24 24" style="stroke:#2d5be3;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="hg-txt"><strong>Cheklar</strong><span>Tarix va hisobot</span></div>
+      </div>
+      <div class="hg-card" onclick="go('balans')">
+        <div class="hg-ico" style="background:rgba(10,140,110,0.08);">
+          <svg viewBox="0 0 24 24" style="stroke:#0a8c6e;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="hg-txt"><strong>Balans</strong><span>Hisob-kitob</span></div>
+      </div>
+      <div class="hg-card" onclick="go('xodim')">
+        <div class="hg-ico" style="background:rgba(107,79,202,0.08);">
+          <svg viewBox="0 0 24 24" style="stroke:#6b4fca;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="hg-txt"><strong>Profil</strong><span>Sozlamalar</span></div>
+      </div>
+    </div>
+    <div class="sec-hdr">
+      <div class="sec-title">Oxirgi cheklar</div>
+      <div class="sec-action" onclick="go('checks')">Barchasi ›</div>
+    </div>
+    <div id="homeChecks"></div>
+    <div class="notice">
+      <svg viewBox="0 0 24 24"><path d="M1 6s2-2 6-2 6 2 6 2 2-2 6-2 6 2 6 2v14s-2-2-6-2-6 2-6 2-2-2-6-2-6 2-6 2V6z"/></svg>
+      Offline rejim — internet bo'lmasayam ishlaydi
+    </div>
+  </div>
+  <div class="bot-nav">
+    <div class="nav-it on" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="lbl">Asosiy</div></div>
+    <div class="nav-it" onclick="go('checks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="lbl">Cheklar</div></div>
+    <div class="nav-it" onclick="go('balans')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="lbl">Balans</div></div>
+    <div class="nav-it" onclick="go('xodim')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="lbl">Profil</div></div>
+  </div>
+</div>
+
+<!-- CHECKS -->
+<div class="screen" id="s-checks">
+  <div class="hdr">
+    <div class="hdr-btn" onclick="go('home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+    <div class="hdr-title">Cheklar</div>
+    <div class="hdr-btn" onclick="openAddCheck()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+  </div>
+  <div class="scroll">
+    <div class="tabs">
+      <button class="tab on" id="tab-w" onclick="switchTab('w')">HAFTA</button>
+      <button class="tab" id="tab-m" onclick="switchTab('m')">OY</button>
+      <button class="tab" id="tab-y" onclick="switchTab('y')">YIL</button>
+    </div>
+    <div class="date-lbl" id="checkDateLbl"></div>
+    <div id="checksList"></div>
+    <div class="sum-pill" id="checkSum"></div>
+  </div>
+  <div class="bot-nav">
+    <div class="nav-it" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="lbl">Asosiy</div></div>
+    <div class="nav-it on" onclick="go('checks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="lbl">Cheklar</div></div>
+    <div class="nav-it" onclick="go('balans')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="lbl">Balans</div></div>
+    <div class="nav-it" onclick="go('xodim')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="lbl">Profil</div></div>
+  </div>
+</div>
+
+<!-- BALANS -->
+<div class="screen" id="s-balans">
+  <div class="hdr">
+    <div style="width:38px;"></div>
+    <div class="hdr-title">Balans</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="scroll">
+    <div class="bal-hero">
+      <div class="bal-left">
+        <div class="lbl">Mening balansim</div>
+        <div class="amt" id="balAmt">+0 ₽</div>
+        <div class="st" id="balSt"></div>
+      </div>
+      <div class="bal-right">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+    </div>
+    <div class="sec-hdr"><div class="sec-title">A'zolar balansi</div></div>
+    <div id="balList"></div>
+  </div>
+  <div class="bot-nav">
+    <div class="nav-it" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="lbl">Asosiy</div></div>
+    <div class="nav-it" onclick="go('checks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="lbl">Cheklar</div></div>
+    <div class="nav-it on" onclick="go('balans')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="lbl">Balans</div></div>
+    <div class="nav-it" onclick="go('xodim')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="lbl">Profil</div></div>
+  </div>
+</div>
+
+<!-- PERSON DETAIL -->
+<div class="screen-full" id="s-detail">
+  <div class="hdr">
+    <div class="hdr-btn" onclick="go('balans')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+    <div class="hdr-title" id="dtName">-</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="scroll">
+    <div class="detail-hero">
+      <div class="big" id="dtAmt">0 ₽</div>
+      <div class="lbl" id="dtLbl"></div>
+    </div>
+    <div class="card">
+      <h4>Cheklar tarixi</h4>
+      <div id="dtChecks"></div>
+      <div style="display:flex;justify-content:space-between;padding:14px 0 0;font-size:16px;font-weight:700;border-top:2px solid var(--border);margin-top:4px;">
+        <span>Jami:</span><span id="dtTotal" style="font-family:var(--mono);color:var(--accent2);">0 ₽</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- YEMIMAN -->
+<div class="screen" id="s-yemiman">
+  <div class="hdr">
+    <div class="hdr-btn" onclick="go('home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+    <div class="hdr-title">Men yemiman / ichmiman</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="scroll">
+    <div class="sec-hdr"><div class="sec-title">Filtrlangan mahsulotlar</div></div>
+    <div id="toggleList"></div>
+    <div class="card" style="margin-top:4px;">
+      <div style="font-size:13px;color:var(--sub);line-height:1.7;">
+        ℹ️ Belgilangan mahsulotlar chekni bo'lishda umumiy hisobga <strong style="color:var(--orange);">qo'shilmaydi</strong>. Faqat siz olmagan narsalarni belgilang.
+      </div>
+    </div>
+  </div>
+  <div class="bot-nav">
+    <div class="nav-it" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="lbl">Asosiy</div></div>
+    <div class="nav-it" onclick="go('checks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="lbl">Cheklar</div></div>
+    <div class="nav-it" onclick="go('balans')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="lbl">Balans</div></div>
+    <div class="nav-it" onclick="go('xodim')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="lbl">Profil</div></div>
+  </div>
+</div>
+
+<!-- SCANNER -->
+<div class="screen" id="s-scanner">
+  <input type="file" accept="image/*" class="scan-file-input" id="scanFileInput" onchange="handleScanFile(event)">
+  <div class="hdr">
+    <div class="hdr-btn" onclick="go('home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+    <div class="hdr-title">Chek skaner</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="scroll">
+    <!-- Kamera tugmasi — asosiy -->
+    <div class="scan-area" onclick="startCamera()" style="cursor:pointer;">
+      <div class="scan-anim">
+        <div class="scan-corner tl"></div>
+        <div class="scan-corner tr"></div>
+        <div class="scan-corner bl"></div>
+        <div class="scan-corner br"></div>
+        <div class="scan-ico-center">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div class="scan-line-anim"></div>
+      </div>
+      <div class="scan-area-txt">
+        <strong>📷 Kamera bilan skanerlash</strong>
+        <span>Chekdagi QR kodni kameraga tutib QR ni skanerlang</span>
+      </div>
+    </div>
+    <!-- Galereadan yuklash -->
+    <button class="scan-receipt-btn" onclick="document.getElementById('scanFileInput').click()" style="background:linear-gradient(135deg,#f0f4ff,#e8eeff);border-color:rgba(45,91,227,0.2);">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Galereadan rasm yuklash
+    </button>
+    <button class="scan-receipt-btn" onclick="openManualCheck()">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Qo'lda kiritish
+    </button>
+    <div class="sec-hdr"><div class="sec-title">Oxirgi skanerlar</div></div>
+    <div id="scanHistory"></div>
+  </div>
+  <div class="bot-nav">
+    <div class="nav-it" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="lbl">Asosiy</div></div>
+    <div class="nav-it" onclick="go('checks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="lbl">Cheklar</div></div>
+    <div class="nav-it" onclick="go('balans')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="lbl">Balans</div></div>
+    <div class="nav-it" onclick="go('xodim')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="lbl">Profil</div></div>
+  </div>
+</div>
+
+<!-- XODIM -->
+<div class="screen" id="s-xodim">
+  <div class="xod-hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="xod-greet">Xush kelibsiz,</div>
+        <div class="xod-name" id="xodName"></div>
+      </div>
+      <div class="hdr-btn" onclick="go('stats')" style="background:rgba(45,91,227,0.1);border-color:rgba(45,91,227,0.2);">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" style="margin-top:0;">
+    <div class="xod-stats" id="xodStats"></div>
+    <button class="xod-row" onclick="go('checks')">
+      <div class="xod-row-ico"><svg viewBox="0 0 24 24" style="stroke:#2d5be3;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:20px;height:20px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <strong>Barcha cheklar</strong>
+      <span class="arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </button>
+    <button class="xod-row" onclick="go('balans')">
+      <div class="xod-row-ico"><svg viewBox="0 0 24 24" style="stroke:#0a8c6e;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:20px;height:20px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <strong>A'zolar</strong>
+      <span class="arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </button>
+    <button class="xod-row" onclick="go('stats')">
+      <div class="xod-row-ico"><svg viewBox="0 0 24 24" style="stroke:#6b4fca;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:20px;height:20px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <strong>Statistika</strong>
+      <span class="arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </button>
+    <button class="xod-row" onclick="exportPDF()">
+      <div class="xod-row-ico"><svg viewBox="0 0 24 24" style="stroke:#c97020;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:20px;height:20px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <strong>PDF hisobot</strong>
+      <span class="arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </button>
+    <button class="xod-row" onclick="go('settings')">
+      <div class="xod-row-ico"><svg viewBox="0 0 24 24" style="stroke:#8a7e6a;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:20px;height:20px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      <strong>Sozlamalar</strong>
+      <span class="arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </button>
+    <button class="logout-btn" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Tizimdan chiqish
+    </button>
+  </div>
+  <div class="bot-nav">
+    <div class="nav-it" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><div class="lbl">Asosiy</div></div>
+    <div class="nav-it" onclick="go('checks')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="lbl">Cheklar</div></div>
+    <div class="nav-it" onclick="go('balans')"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><div class="lbl">Balans</div></div>
+    <div class="nav-it on" onclick="go('xodim')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="lbl">Profil</div></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="screen" id="s-stats">
+  <div class="hdr">
+    <div class="hdr-btn" onclick="go('xodim')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+    <div class="hdr-title">Statistika</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="scroll">
+    <div style="padding:16px 16px 0;">
+      <div class="stat-card">
+        <h3>Haftalik harajat</h3>
+        <div id="statWeekBars"></div>
+      </div>
+      <div class="stat-card">
+        <h3>Shaxs bo'yicha</h3>
+        <div id="statPersonBars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen" id="s-settings">
+  <div class="hdr">
+    <div class="hdr-btn" onclick="go('xodim')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+    <div class="hdr-title">Sozlamalar</div>
+    <div style="width:38px;"></div>
+  </div>
+  <div class="scroll">
+    <div class="settings-section">
+      <h3>A'zolar</h3>
+      <div id="membersList"></div>
+
+      <!-- Faqat admin (Ogabek) ko'radi -->
+      <div id="notAdminMsg" style="display:none;align-items:center;gap:10px;background:rgba(107,79,202,0.06);border:1px solid rgba(107,79,202,0.15);border-radius:14px;padding:14px 16px;margin-bottom:12px;">
+        <span style="font-size:20px;">🔒</span>
+        <div style="font-size:13px;color:var(--sub);line-height:1.5;">A'zo qo'shish yoki o'chirish faqat <strong style="color:var(--purple);">Ogabek 👑</strong> uchun mavjud</div>
+      </div>
+      <div id="addMemberForm">
+        <h3>Yangi a'zo qo'shish</h3>
+        <div class="form-group"><label class="form-label">Ism</label><input class="form-input" id="newMemberName" placeholder="Ism kiriting"></div>
+        <div class="form-group"><label class="form-label">PIN (4 raqam)</label><input class="form-input" id="newMemberPin" type="number" placeholder="0000" maxlength="4"></div>
+        <button class="btn-main" onclick="addMember()">➕ A'zo qo'shish</button>
+      </div>
+    </div>
+    <div style="padding: 0 16px 8px;">
+      <h3 style="font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.6px;text-transform:uppercase;padding:14px 0 10px;">Ma'lumotlar</h3>
+    </div>
+    <button class="data-btn" onclick="exportData()">
+      <svg viewBox="0 0 24 24" style="stroke:#0a8c6e;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Ma'lumotlarni JSON yuklab olish
+    </button>
+    <button class="data-btn" onclick="document.getElementById('importFile').click()">
+      <svg viewBox="0 0 24 24" style="stroke:#2d5be3;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      JSON dan import qilish
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+    <button class="danger-btn" onclick="clearAllData()">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      Barcha ma'lumotlarni o'chirish
+    </button>
+  </div>
+</div>
+
+</div><!-- end #app -->
+
+<!-- TAQIQLANGAN MAHSULOTLAR BILDIRISHI MODAL -->
+<div class="overlay" id="exclNoticeOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="text-align:center;padding:8px 0 20px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(201,48,48,0.1);border:2px solid rgba(201,48,48,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;">🚫</div>
+      <div style="font-family:var(--serif);font-size:22px;margin-bottom:8px;">Diqqat!</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.6;">
+        <strong id="exclNoticeStore" style="color:var(--text);"></strong> chekida
+      </div>
+    </div>
+    <div style="background:rgba(201,48,48,0.06);border:1px solid rgba(201,48,48,0.15);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--red);font-weight:700;margin-bottom:6px;">Taqiqlangan mahsulotlar topildi:</div>
+      <div id="exclNoticeItems" style="font-size:14px;color:var(--text);font-weight:600;line-height:1.6;"></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--sub);line-height:1.7;">
+      <strong id="exclNoticeNames" style="color:var(--text);"></strong> taqiqlangan mahsulotlar bilan <strong style="color:var(--red);">hisob-kitob qilinmaydi.</strong><br>
+      Faqat ruxsat etilgan mahsulotlar bo'yicha hisob yuritildi.
+    </div>
+    <button class="btn-main" onclick="closeExclNotice()">Tushunarli ✅</button>
+  </div>
+</div>
+
+<!-- CHECK DETAIL MODAL -->
+<div class="overlay" id="checkDetailModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="chk-detail-header">
+      <div class="chk-detail-store" id="cdStore">Do'kon</div>
+      <div class="chk-detail-amt" id="cdAmt">0 ₽</div>
+      <div class="chk-detail-meta" id="cdMeta"></div>
+    </div>
+    <div class="chk-detail-who" id="cdWho"></div>
+    <div class="chk-detail-items-title">📦 Mahsulotlar</div>
+    <div class="chk-items-list" id="cdItems"></div>
+    <br>
+    <button class="btn-danger-full" id="cdDeleteBtn" onclick="">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      Chekni o'chirish
+    </button>
+    <button class="btn-sec" style="margin-top:8px;" onclick="closeModal('checkDetailModal')">Yopish</button>
+  </div>
+</div>
+
+<!-- SCAN MODAL -->
+<div class="overlay" id="scanModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div id="scanMethodBadge"></div>
+    <div class="sheet-title" id="scanModalTitle">🧾 Chek topildi</div>
+    <div id="scanItems"></div>
+    <div class="rcpt-meta" id="scanMeta"></div>
+    <div class="rcpt-excluded" id="scanExcluded"></div>
+    <div class="rcpt-total"><span>Jami:</span><span id="scanTotal">0 ₽</span></div>
+    <br>
+    <button class="btn-main" onclick="confirmScan()">✅ Tasdiqlash va saqlash</button>
+    <button class="btn-sec" onclick="closeModal('scanModal');openManualCheck()">✏️ Tahrirlash</button>
+    <button class="btn-sec" style="margin-top:8px;" onclick="closeModal('scanModal')">Bekor qilish</button>
+  </div>
+</div>
+
+<!-- ADD CHECK MODAL -->
+<div class="overlay" id="addCheckModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">➕ Chek qo'shish</div>
+    <div class="form-group">
+      <label class="form-label">Do'kon nomi</label>
+      <input class="form-input" id="acStore" placeholder="Masalan: Pyatёrochka">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Jami summa (₽)</label>
+      <input class="form-input" id="acAmount" type="number" placeholder="0" min="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kim tomonidan skaner qilindi</label>
+      <select class="form-select" id="acScanner"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Qo'shilmaydigan mahsulotlar</label>
+      <div class="excl-checks" id="acExcl"></div>
+    </div>
+    <button class="btn-main" onclick="saveManualCheck()">Saqlash</button>
+    <button class="btn-sec" onclick="closeModal('addCheckModal')">Bekor qilish</button>
+  </div>
+</div>
+
+<!-- DELETE REQUEST BANNER (floating) -->
+<div id="deleteRequestBanner" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:390px;width:calc(100% - 24px);z-index:998;background:linear-gradient(135deg,#fff3f3,#ffe8e8);border:1.5px solid rgba(201,48,48,0.3);border-radius:20px;padding:14px 18px;box-shadow:0 8px 32px rgba(201,48,48,0.2);cursor:pointer;align-items:center;gap:12px;">
+  <div style="width:42px;height:42px;border-radius:50%;background:rgba(201,48,48,0.12);border:2px solid rgba(201,48,48,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;">🗑️</div>
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:2px;">Chek o'chirish so'rovi!</div>
+    <div style="font-size:12px;color:var(--text);font-weight:600;" id="drbStore">—</div>
+    <div style="font-size:11px;color:var(--sub);margin-top:1px;"><span id="drbRequester">—</span> · <span id="drbAmt">—</span></div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+    <div style="background:var(--red);color:#fff;font-size:11px;font-weight:800;border-radius:20px;padding:3px 10px;" id="drbTimer">60s</div>
+    <div style="font-size:10px;color:var(--red);font-weight:700;">Bosib tasdiqlang</div>
+  </div>
+</div>
+
+<!-- DELETE VOTE MODAL -->
+<div class="overlay" id="deleteVoteModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="text-align:center;padding:8px 0 20px;">
+      <div style="width:68px;height:68px;border-radius:50%;background:rgba(201,48,48,0.1);border:2px solid rgba(201,48,48,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:30px;">🗑️</div>
+      <div style="font-family:var(--serif);font-size:22px;margin-bottom:6px;color:var(--text);">Chek o'chirish</div>
+      <div id="dvRequestedBy" style="font-size:12px;color:var(--sub);font-weight:600;"></div>
+    </div>
+
+    <!-- Chek ma'lumotlari -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px 18px;margin-bottom:16px;">
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;" id="dvCheckStore">—</div>
+      <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--red);" id="dvCheckAmt">—</div>
+    </div>
+
+    <!-- Ovoz progress -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);">Tasdiqlashlar</div>
+        <div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--red);" id="dvVoteCount">0/4</div>
+      </div>
+      <div style="height:10px;background:var(--surface3);border-radius:5px;overflow:hidden;border:1px solid var(--border);">
+        <div id="dvProgressFill" style="height:100%;background:linear-gradient(90deg,var(--red),#ff6b6b);border-radius:5px;transition:width .4s ease;width:0%;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <div style="font-size:12px;color:var(--sub);" id="dvRemaining">—</div>
+        <div style="font-size:12px;font-weight:700;color:var(--orange);" id="dvTimer">⏱ 60s</div>
+      </div>
+    </div>
+
+    <!-- Kim ovoz berdi -->
+    <div style="background:rgba(10,140,110,0.06);border:1px solid rgba(10,140,110,0.15);border-radius:14px;padding:12px 16px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;">✅ Tasdiqlagan a'zolar</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text);" id="dvVoters">—</div>
+    </div>
+
+    <button class="btn-main" id="dvConfirmBtn" style="background:var(--red);box-shadow:0 4px 20px rgba(201,48,48,0.35);" onclick="">🗑️ Tasdiqlash</button>
+    <button class="btn-sec" style="margin-top:8px;" onclick="closeDeleteVoteModal()">Yopish</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// JSONBIN.IO — Bulut DB
+// jsonbin.io da bepul hisob oching:
+//   1. jsonbin.io → Register
+//   2. API Keys → Create Access Key (faqat read/write)
+//   3. Bins → Create Bin → bo'sh {} qo'ying
+//   4. BIN_ID va API_KEY ni quyiga kiriting
+// ============================================================
+const JSONBIN_ID  = '$2a$10$cI0.eJR.4Qc3/Kzjd5At4uw43e5G9oRGCLKGDp/vI/zYuFefFKurq';   // ← o'zgartiring
+const JSONBIN_KEY = '6a1c26fcddf5aa59f77b93b5';  // ← o'zgartiring
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+
+const CLOUD = {
+  _configured() {
+    return JSONBIN_ID !== 'SIZNING_BIN_ID_SIZU' && JSONBIN_KEY !== 'SIZNING_API_KEY_SIZU';
+  },
+  async load() {
+    if (!this._configured()) return null;
+    try {
+      const r = await fetch(JSONBIN_URL+'/latest', {
+        headers: { 'X-Master-Key': JSONBIN_KEY }
+      });
+      if (!r.ok) return null;
+      const j = await r.json();
+      return j.record || null;
+    } catch(e) { return null; }
+  },
+  async save(data) {
+    if (!this._configured()) return false;
+    try {
+      const r = await fetch(JSONBIN_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
+        body: JSON.stringify(data)
+      });
+      return r.ok;
+    } catch(e) { return false; }
+  }
+};
+
+// ============================================================
+// DATA STORE — localStorage (tez) + JSONBin (bulut sync)
+// ============================================================
+const DB = {
+  get(k, def=null) {
+    try { const v=localStorage.getItem('kvhisobi_'+k); return v!==null?JSON.parse(v):def; } catch(e){ return def; }
+  },
+  set(k,v) {
+    try { localStorage.setItem('kvhisobi_'+k, JSON.stringify(v)); } catch(e){}
+    // Bulutga ham saqla (background)
+    this._syncToCloud();
+  },
+  _syncTimer: null,
+  _syncToCloud() {
+    clearTimeout(this._syncTimer);
+    this._syncTimer = setTimeout(async () => {
+      const data = this.exportAll();
+      const ok = await CLOUD.save(data);
+      if (ok) {
+        const el = document.getElementById('syncStatus');
+        if (el) { el.textContent = '☁️ Saqlandi'; el.style.color='var(--green)'; setTimeout(()=>{ if(el)el.textContent=''; },3000); }
+      }
+    }, 1500);
+  },
+  exportAll() {
+    return {
+      checks: this.get('checks',[]),
+      members: this.get('members', DEFAULT_MEMBERS),
+      exclusions: this.get('exclusions',{}),
+      deleteRequests: this.get('deleteRequests',[]),
+      _saved: new Date().toISOString()
+    };
+  },
+  importAll(data) {
+    if (data.checks) this.set('checks', data.checks);
+    if (data.members) this.set('members', data.members);
+    if (data.deleteRequests) this.set('deleteRequests', data.deleteRequests);
+    if (data.exclusions) this.set('exclusions', data.exclusions);
+  }
+};
+
+// ============================================================
+// BULUTDAN YUKLASH — ilova ochilganda
+// ============================================================
+async function loadFromCloud() {
+  if (!CLOUD._configured()) {
+    showCloudBanner();
+    return;
+  }
+  const syncEl = document.getElementById('syncStatus');
+  if (syncEl) { syncEl.textContent = '☁️ Yuklanmoqda...'; syncEl.style.color='var(--sub)'; }
+  const data = await CLOUD.load();
+  if (data) {
+    // Bulut yaniroq bo'lsa — uni ishlat
+    const localChecks = DB.get('checks',[]);
+    const cloudChecks = data.checks||[];
+    if (cloudChecks.length >= localChecks.length) {
+      DB.importAll(data);
+    }
+    if (syncEl) { syncEl.textContent = '☁️ Ulangan'; syncEl.style.color='var(--green)'; setTimeout(()=>{ if(syncEl)syncEl.textContent=''; },3000); }
+  } else {
+    if (syncEl) { syncEl.textContent = '📵 Oflayn'; syncEl.style.color='var(--orange)'; setTimeout(()=>{ if(syncEl)syncEl.textContent=''; },4000); }
+  }
+}
+
+function showCloudBanner() {
+  const el = document.getElementById('cloudSetupBanner');
+  if (el) el.style.display = 'flex';
+}
+
+// ============================================================
+// DEFAULT MEMBERS
+// ============================================================
+const DEFAULT_MEMBERS = [
+  { id:'D', name:'Dilshodbek', pin:'2222', emoji:'👑', avClass:'av0' },
+  { id:'T', name:'Temurbek',   pin:'5555', emoji:'', avClass:'av1' },
+  { id:'O', name:"O'ktambek", pin:'7777', emoji:'', avClass:'av2' },
+  { id:'B', name:'Botirbek',   pin:'0000', emoji:'', avClass:'av3' },
+  { id:'G', name:'Ogabek',     pin:'3946', emoji:'', avClass:'av4' },
+  { id:'A', name:'Abdulla',    pin:'4444', emoji:'', avClass:'av5' },
+];
+
+function getMembers() { return DB.get('members', DEFAULT_MEMBERS); }
+function saveMembers(m) { DB.set('members', m); }
+function getChecks() { return DB.get('checks', []); }
+function saveChecks(c) { DB.set('checks', c); }
+function getExclusions() { return DB.get('exclusions', {}); }
+function saveExclusions(e) { DB.set('exclusions', e); }
+
+const EXCL_PRODUCTS = [
+  { key:'aroq', label:'Aroq', svgPath:'M8 3h8l1 9H7L8 3zm-1 9h10l1 5H6l1-5zm2 5v4m4-4v4' },
+  { key:'sigaret', label:'Sigaret', svgPath:'M2 16h16M18 11h.01M22 16h.01M7 11c0-2 1-4 5-4s5 2 5 4' },
+  { key:'piva', label:'Piva', svgPath:'M17 11h1a3 3 0 0 1 0 6h-1M5 11H4a3 3 0 0 0 0 6h1M9 3l2 8m4-8l-2 8M5 11l2-8h10l2 8H5zm0 6h14' },
+  { key:'vino', label:'Vino', svgPath:'M8 22h8M7 10h10M12 15v7M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5z' },
+  { key:'qahva', label:'Qahva', svgPath:'M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser = null;
+let pinStr = '';
+let currentTab = 'w';
+let pendingScan = null;
+
+// ============================================================
+// PUSH NOTIFICATIONS
+// ============================================================
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const perm = await Notification.requestPermission();
+  return perm === 'granted';
+}
+
+function sendPushNotif(title, body, tag='check') {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%232d5be3"/><text y="44" x="10" font-size="40">🧾</text></svg>',
+      tag,
+      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="%232d5be3"/></svg>',
+      vibrate: [200, 100, 200],
+      silent: false
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 6000);
+  } catch(e) {}
+}
+
+function handleBellClick() {
+  if (!('Notification' in window)) { showToast('Bildirishnoma','Bu brauzer qo\'llamaydi','err'); return; }
+  if (Notification.permission === 'granted') {
+    showToast('Bildirishnomalar','Allaqachon yoqilgan ✅','bell');
+  } else {
+    requestNotifPermission().then(ok => {
+      if (ok) showToast('Bildirishnomalar','Yoqildi! ✅','bell');
+      else showToast('Rad etildi','Sozlamalarda ruxsat bering','err');
+    });
+  }
+}
+
+function renderPushBanner() {
+  const el = document.getElementById('pushBanner');
+  if (!el) return;
+  if (!('Notification' in window) || Notification.permission === 'granted') {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = `
+    <div class="push-banner">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="push-banner-txt">
+        <strong>Push bildirishnomalar</strong>
+        Kim chek qo'shsa xabar olasiz
+      </div>
+      <button class="push-btn" onclick="enablePush()">Yoqish</button>
+    </div>`;
+}
+
+async function enablePush() {
+  const ok = await requestNotifPermission();
+  if (ok) {
+    renderPushBanner();
+    showToast('Yoqildi','Push bildirishnomalar faollashdi 🔔','bell');
+    sendPushNotif('Kvartira Hisobi', "Bildirishnomalar yoqildi! Endi cheklar haqida xabar olasiz 🎉");
+  } else {
+    showToast('Rad etildi','Brauzer sozlamalaridan ruxsat bering','err');
+  }
+}
+
+// ============================================================
+// PIN
+// ============================================================
+function pinTap(d) {
+  if (pinStr.length >= 4) return;
+  pinStr += d;
+  renderDots();
+  if (pinStr.length === 4) setTimeout(checkPin, 250);
+}
+function pinDel() { pinStr = pinStr.slice(0,-1); renderDots(); }
+function renderDots(err=false) {
+  for (let i=0;i<4;i++) {
+    const el = document.getElementById('pd'+i);
+    el.classList.toggle('on', i < pinStr.length && !err);
+    el.classList.toggle('err', err);
+  }
+}
+function checkPin() {
+  const members = getMembers();
+  const found = members.find(m => m.pin === pinStr);
+  if (found) {
+    currentUser = found;
+    document.getElementById('pinErr').classList.remove('show');
+    document.getElementById('pinScreen').classList.remove('active');
+    document.getElementById('pinScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    pinStr = ''; renderDots();
+    initApp();
+    setTimeout(() => showToast('Kvartira Hisobi', found.name + ' tizimga kirdi ✅', 'home'), 600);
+  } else {
+    renderDots(true);
+    document.getElementById('pinErr').classList.add('show');
+    navigator.vibrate && navigator.vibrate([80,40,80]);
+    setTimeout(() => {
+      pinStr = ''; renderDots();
+      document.getElementById('pinErr').classList.remove('show');
+    }, 1500);
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function go(id) {
+  // Scanner ekranidan chiqilganda kamerani to'xtat
+  if (id !== 'scanner' && _camActive) stopCamera();
+  document.querySelectorAll('.screen,.screen-full').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('s-'+id);
+  if (el) el.classList.add('active');
+  window.scrollTo(0,0);
+  if (id==='home') renderHome();
+  if (id==='checks') renderChecks();
+  if (id==='balans') renderBalans();
+  if (id==='scanner') { renderScanHistory(); setTimeout(startCamera, 100); }
+  if (id==='yemiman') renderToggles();
+  if (id==='xodim') renderXodim();
+  if (id==='stats') renderStats();
+  if (id==='settings') renderSettings();
+}
+
+function initApp() {
+  renderHome(); renderChecks(); renderBalans();
+  renderToggles(); renderXodim(); renderStats();
+  renderScanHistory(); renderSettings();
+  renderPushBanner();
+  // Bulutdan yuklash
+  loadFromCloud().then(() => {
+    renderHome(); renderChecks(); renderBalans();
+    renderXodim(); renderStats(); renderScanHistory();
+  });
+  // O'chirish so'rovlarini polling
+  startDeletePolling();
+}
+
+// ============================================================
+// BALANCE
+// ============================================================
+function calcBalances() {
+  const members = getMembers();
+  const checks = getChecks();
+  const spent = {}; members.forEach(m => spent[m.id] = 0);
+  const consumed = {}; members.forEach(m => consumed[m.id] = 0);
+  checks.forEach(chk => {
+    spent[chk.scannedBy] = (spent[chk.scannedBy]||0) + chk.amount;
+    const perPerson = chk.amount / members.length;
+    members.forEach(m => { consumed[m.id] = (consumed[m.id]||0) + perPerson; });
+  });
+  const balances = {};
+  members.forEach(m => { balances[m.id] = (spent[m.id]||0) - (consumed[m.id]||0); });
+  return balances;
+}
+
+// ============================================================
+// HOME
+// ============================================================
+function renderHome() {
+  if (!currentUser) return;
+  const bals = calcBalances();
+  const b = bals[currentUser.id] || 0;
+  const amtEl = document.getElementById('homeAmt');
+  const badgeEl = document.getElementById('homeBadge');
+  const heroEl = document.getElementById('homeHero');
+  const glowEl = document.getElementById('heroGlow');
+  amtEl.textContent = fmt(b);
+  amtEl.className = 'hero-amount ' + (b>=0?'pos':'neg');
+  badgeEl.textContent = b>=0 ? '✦ Haqdor' : '⚠ Qarzdor';
+  badgeEl.className = 'hero-badge ' + (b>=0?'pos':'neg');
+  heroEl.className = 'home-hero ' + (b>=0?'pos':'neg');
+  glowEl.className = 'hero-glow ' + (b>=0?'pos':'neg');
+  document.getElementById('heroUser').textContent = currentUser.name + ' ' + (currentUser.emoji||'');
+
+  const checks = getChecks().slice(-3).reverse();
+  const members = getMembers();
+  const el = document.getElementById('homeChecks');
+  if (checks.length===0) {
+    el.innerHTML = `<div class="empty-state"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>Hali chek yo'q. Birinchi chekni qo'shing!</p></div>`;
+    return;
+  }
+  el.innerHTML = checks.map(c => {
+    const m = members.find(x=>x.id===c.scannedBy) || {name:'?',avClass:'av0',id:'?'};
+    return `<button class="check-card" onclick="openCheckDetail('${c.id}')">
+      <div class="av ${m.avClass}">${m.name[0]}</div>
+      <div class="ck-info"><strong>${m.name}</strong><em>${c.store} · ${fmtDate(c.date)}</em></div>
+      <div class="ck-right"><div class="ck-amt">${fmtN(c.amount)} ₽</div><div class="ck-tag">SKANER</div></div>
+    </button>`;
+  }).join('');
+}
+
+// ============================================================
+// CHECKS
+// ============================================================
+function switchTab(t) {
+  currentTab = t;
+  ['w','m','y'].forEach(x => document.getElementById('tab-'+x).classList.toggle('on', x===t));
+  renderChecks();
+}
+function renderChecks() {
+  const checks = getChecks();
+  const members = getMembers();
+  const now = new Date();
+  let filtered = checks;
+  let lbl = '';
+  if (currentTab==='w') {
+    const start = new Date(now); start.setDate(start.getDate()-7);
+    filtered = checks.filter(c => new Date(c.date) >= start);
+    lbl = "So'nggi 7 kun";
+  } else if (currentTab==='m') {
+    const start = new Date(now); start.setDate(1);
+    filtered = checks.filter(c => new Date(c.date) >= start);
+    lbl = now.toLocaleString('uz',{month:'long'}) + ' oyi';
+  } else {
+    const start = new Date(now.getFullYear(),0,1);
+    filtered = checks.filter(c => new Date(c.date) >= start);
+    lbl = now.getFullYear() + ' yil';
+  }
+  document.getElementById('checkDateLbl').textContent = lbl;
+  const el = document.getElementById('checksList');
+  const sorted = [...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if (sorted.length===0) {
+    el.innerHTML = `<div class="empty-state"><div class="ico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><p>Bu davr uchun chek yo'q</p></div>`;
+    document.getElementById('checkSum').innerHTML = '';
+    return;
+  }
+  el.innerHTML = sorted.map(c => {
+    const m = members.find(x=>x.id===c.scannedBy)||{name:'?',avClass:'av0',id:'?'};
+    return `<button class="check-card" onclick="openCheckDetail('${c.id}')">
+      <div class="av ${m.avClass}">${m.name[0]}</div>
+      <div class="ck-info"><strong>${m.name}</strong><em>${c.store} · ${fmtDate(c.date)}</em></div>
+      <div class="ck-right"><div class="ck-amt">${fmtN(c.amount)} ₽</div><div class="ck-tag">✅ SKANER</div></div>
+    </button>`;
+  }).join('');
+  const total = sorted.reduce((s,c)=>s+c.amount,0);
+  const perPerson = members.length ? total/members.length : 0;
+  document.getElementById('checkSum').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>Jami: ${fmtN(Math.round(total))} ₽</strong>
+      <span>Har biriga: ${fmtN(Math.round(perPerson))} ₽</span>
+    </div>`;
+}
+
+// ============================================================
+// BALANS
+// ============================================================
+function renderBalans() {
+  if (!currentUser) return;
+  const bals = calcBalances();
+  const members = getMembers();
+  const b = bals[currentUser.id]||0;
+  document.getElementById('balAmt').textContent = fmt(b);
+  document.getElementById('balSt').textContent = b>=0?'✦ Haqdor':'⚠ Qarzdor';
+  document.getElementById('balSt').style.color = b>=0?'var(--green)':'var(--red)';
+  const el = document.getElementById('balList');
+  el.innerHTML = members.map(m => {
+    const mb = bals[m.id]||0;
+    const amtCls = mb>=0?'var(--green)':'var(--red)';
+    const rel = getRelation(currentUser.id, m.id, bals);
+    return `<div class="bp-card" onclick="openPersonDetail('${m.id}')">
+      <div class="av ${m.avClass}">${m.name[0]}</div>
+      <div class="bp-info"><strong>${m.name} ${m.emoji||''}</strong><em>${rel}</em></div>
+      <div class="bp-amt" style="color:${amtCls};">${fmt(mb)}</div>
+    </div>`;
+  }).join('');
+}
+
+function getRelation(myId, otherId, bals) {
+  if (myId===otherId) return 'Bu siz';
+  const thB = bals[otherId]||0;
+  if (thB>0) return 'Haqdor'; if (thB<0) return 'Qarzdor'; return 'Teng';
+}
+
+function openPersonDetail(memberId) {
+  const members = getMembers();
+  const m = members.find(x=>x.id===memberId);
+  if (!m) return;
+  const checks = getChecks().filter(c=>c.scannedBy===memberId);
+  const bals = calcBalances();
+  const b = bals[memberId]||0;
+  document.getElementById('dtName').textContent = m.name;
+  document.getElementById('dtAmt').textContent = fmt(b);
+  document.getElementById('dtAmt').style.color = b>=0?'var(--green)':'var(--red)';
+  document.getElementById('dtLbl').textContent = b>=0?"Haqdor (Ko'proq to'lagan)":"Qarzdor (Kam to'lagan)";
+  const total = checks.reduce((s,c)=>s+c.amount,0);
+  document.getElementById('dtTotal').textContent = fmtN(total)+' ₽';
+  const sorted = [...checks].sort((a,b2)=>new Date(b2.date)-new Date(a.date));
+  document.getElementById('dtChecks').innerHTML = sorted.length===0
+    ? '<div style="color:var(--sub);font-size:14px;padding:10px 0;">Chek yo\'q</div>'
+    : sorted.map(c=>`<div class="detail-check" onclick="openCheckDetail('${c.id}')" style="cursor:pointer;">
+        <div class="l"><strong>${fmtDate(c.date)}</strong><em>${c.store}</em></div>
+        <div class="r" style="display:flex;align-items:center;gap:10px;">${fmtN(c.amount)} ₽
+          <span onclick="event.stopPropagation();deleteCheck('${c.id}')" style="color:var(--red);font-size:12px;font-weight:700;padding:4px 8px;border-radius:8px;background:rgba(201,48,48,0.08);border:1px solid rgba(201,48,48,0.15);">🗑</span>
+        </div>
+      </div>`).join('');
+  go('detail');
+}
+
+// ============================================================
+// TOGGLES
+// ============================================================
+function renderToggles() {
+  if (!currentUser) return;
+  const excls = getExclusions();
+  const mine = excls[currentUser.id]||[];
+  const el = document.getElementById('toggleList');
+  el.innerHTML = EXCL_PRODUCTS.map(p=>`
+    <div class="toggle-row">
+      <div class="tog-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#8a7e6a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+          <path d="${p.svgPath}"/>
+        </svg>
+      </div>
+      <div class="tog-txt"><strong>${p.label}</strong><em>Hisobga qo'shilmaydi</em></div>
+      <button class="toggle ${mine.includes(p.key)?'on':''}" id="tog-${p.key}" onclick="toggleExcl('${p.key}')"></button>
+    </div>`).join('');
+}
+function toggleExcl(key) {
+  if (!currentUser) return;
+  const excls = getExclusions();
+  const mine = excls[currentUser.id]||[];
+  const idx = mine.indexOf(key);
+  if (idx>=0) mine.splice(idx,1); else mine.push(key);
+  excls[currentUser.id] = mine;
+  saveExclusions(excls);
+  document.getElementById('tog-'+key).classList.toggle('on', mine.includes(key));
+}
+
+// ============================================================
+// SCANNER
+// ============================================================
+// ============================================================
+// PROVERKACHEKA.COM TOKEN
+// ============================================================
+// ============================================================
+// KAMERA QR SKANER — real vaqt
+// ============================================================
+let _camStream = null;
+let _camAnimId = null;
+let _camActive = false;
+
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Kamera', "Bu brauzer kamerani qo'llab-quvvatlamaydi", 'err');
+    return;
+  }
+  // Avval ruxsat holatini tekshir
+  if (navigator.permissions) {
+    try {
+      const perm = await navigator.permissions.query({ name: 'camera' });
+      if (perm.state === 'denied') {
+        showCameraPermDenied();
+        return;
+      }
+    } catch(e) {}
+  }
+  try {
+    _camActive = true;
+    document.getElementById('camOverlay').classList.add('open');
+    document.getElementById('camStatus').textContent = 'Kamera yoqilmoqda...';
+    document.getElementById('camFound').classList.remove('show');
+    // Kamera ruxsatini so'rash popup ni ko'rsat
+    document.getElementById('camPermHint').style.display = 'flex';
+
+    _camStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+    document.getElementById('camPermHint').style.display = 'none';
+    const video = document.getElementById('camVideo');
+    video.srcObject = _camStream;
+    await video.play();
+    document.getElementById('camStatus').textContent = "Chek QR kodini ramkaga to'g'rilang";
+    _camAnimId = requestAnimationFrame(_camScanLoop);
+  } catch(err) {
+    _camActive = false;
+    document.getElementById('camOverlay').classList.remove('open');
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      showCameraPermDenied();
+    } else {
+      showToast('Kamera xatosi', err.message || "Kamera ochilmadi", 'err');
+    }
+  }
+}
+
+function showCameraPermDenied() {
+  // Scanner ekranida ruxsat yo'q UI ko'rsat
+  const scanArea = document.querySelector('.scan-area');
+  if (scanArea) {
+    scanArea.innerHTML = `
+      <div style="text-align:center;padding:28px 20px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(201,48,48,0.1);border:2px solid rgba(201,48,48,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c93030" stroke-width="1.8" stroke-linecap="round" width="28" height="28"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+        </div>
+        <strong style="display:block;font-size:15px;color:#c93030;margin-bottom:8px;">Kamera ruxsati berilmagan</strong>
+        <p style="font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:16px;">
+          Android: Brauzer sozlamalari → Site Settings → Camera → Allow<br>
+          <em style="font-size:12px;">yoki quyidagi tugmani bosing</em>
+        </p>
+        <button onclick="startCamera()" style="background:var(--accent);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);">🔄 Qayta urinish</button>
+        <button onclick="document.getElementById('scanFileInput').click()" style="display:block;width:100%;margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text);">📷 Galereadan yuklash</button>
+      </div>`;
+  }
+}
+
+function stopCamera() {
+  _camActive = false;
+  if (_camAnimId) { cancelAnimationFrame(_camAnimId); _camAnimId = null; }
+  if (_camStream) {
+    _camStream.getTracks().forEach(t => t.stop());
+    _camStream = null;
+  }
+  const video = document.getElementById('camVideo');
+  video.srcObject = null;
+  document.getElementById('camOverlay').classList.remove('open');
+}
+
+let _lastQRTime = 0;
+
+function _camScanLoop() {
+  if (!_camActive) return;
+  const video = document.getElementById('camVideo');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    _camAnimId = requestAnimationFrame(_camScanLoop);
+    return;
+  }
+  const canvas = document.getElementById('camCanvas');
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) { _camAnimId = requestAnimationFrame(_camScanLoop); return; }
+
+  // Ramka o'lchamini aniqlash (70vw yoki 280px, kichigini olish)
+  const frameSize = Math.min(window.innerWidth * 0.7, 280);
+  const cx = vw / 2, cy = vh / 2;
+  const half = (frameSize / Math.min(window.innerWidth, window.innerHeight)) * Math.min(vw, vh) / 2;
+  const sx = Math.max(0, cx - half), sy = Math.max(0, cy - half);
+  const sw = Math.min(vw - sx, half * 2), sh = Math.min(vh - sy, half * 2);
+
+  canvas.width = sw; canvas.height = sh;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  const imageData = ctx.getImageData(0, 0, sw, sh);
+
+  let qrResult = null;
+  if (typeof jsQR !== 'undefined') {
+    qrResult = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert'
+    });
+    // Agar topilmasa butun kadrni ham tekshir
+    if (!qrResult) {
+      canvas.width = vw; canvas.height = vh;
+      ctx.drawImage(video, 0, 0, vw, vh);
+      const fullData = ctx.getImageData(0, 0, vw, vh);
+      qrResult = jsQR(fullData.data, vw, vh, { inversionAttempts: 'attemptBoth' });
+    }
+  }
+
+  if (qrResult) {
+    const now = Date.now();
+    if (now - _lastQRTime < 2000) {
+      _camAnimId = requestAnimationFrame(_camScanLoop);
+      return;
+    }
+    _lastQRTime = now;
+    _onQRFound(qrResult.data);
+    return;
+  }
+
+  _camAnimId = requestAnimationFrame(_camScanLoop);
+}
+
+async function _onQRFound(qrData) {
+  // Topildi animatsiya
+  document.getElementById('camFound').classList.add('show');
+  document.getElementById('camStatus').textContent = '✅ QR topildi! Chek olinmoqda...';
+
+  // Vibration
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+  await new Promise(r => setTimeout(r, 400));
+  stopCamera();
+  openScanProgress();
+
+  setStep(1, 'spin', '⏳', 'QR ma\'lumotlari proverkacheka.com ga yuborilmoqda...');
+  setStep(2, 'spin', '⏳', 'Chek olinmoqda...');
+
+  try {
+    const result = await fetchFromProverkaRaw(qrData);
+    setStep(1, 'done', '✅', 'QR muvaffaqiyatli yuborildi');
+    setStep(2, 'done', '✅', result.store + ' — ' + fmtN(result.total) + ' ₽');
+    await new Promise(r => setTimeout(r, 500));
+    if (!_scanCancelled) {
+      closeScanProgress();
+      pendingScan = result;
+      openScanModal(result, 'proverka');
+    }
+  } catch(err) {
+    setStep(1, 'done', '✅', 'QR yuborildi');
+    setStep(2, 'err', '❌', (err.message || 'Xato').slice(0, 70));
+    document.getElementById('spCancelBtn').textContent = 'Yopish';
+    await new Promise(r => setTimeout(r, 2500));
+    if (!_scanCancelled) { closeScanProgress(); openManualCheck(); }
+  }
+}
+
+// ============================================================
+// SCANNER: Rasm → proverkacheka.com (qrfile usuli)
+// Token hardcode — foydalanuvchi kiritmasin
+// ============================================================
+const _PROVERKA_TOKEN = '39701.TdPdChedANyABA8XG';
+
+async function fetchFromProverkaFile(file) {
+  const fd = new FormData();
+  fd.append('token', _PROVERKA_TOKEN);
+  fd.append('qrfile', file);
+  let res;
+  try {
+    res = await fetch('https://proverkacheka.com/api/v1/check/get', {
+      method: 'POST',
+      body: fd
+    });
+  } catch(netErr) {
+    throw new Error("Internet yo\'q yoki server bilan aloqa uzildi");
+  }
+  if (!res.ok) throw new Error('Server xatosi: ' + res.status);
+  const data = await res.json();
+  if (data.code === 2) {
+    await new Promise(r => setTimeout(r, 2500));
+    const fd2 = new FormData();
+    fd2.append('token', _PROVERKA_TOKEN);
+    fd2.append('qrfile', file);
+    const res2 = await fetch('https://proverkacheka.com/api/v1/check/get', { method: 'POST', body: fd2 });
+    const data2 = await res2.json();
+    if (data2.code !== 1) throw new Error("Chek ma\'lumotlari tayyor emas (kod: " + data2.code + ')');
+    return _parseProverkaResponse(data2);
+  }
+  if (data.code !== 1) {
+    const codeMsg = { 0: "Chek noto\'g\'ri yoki topilmadi", 3: "So\'rovlar limiti oshdi", 4: "Qayta urinish kerak", 5: "Ma\'lumot olinmadi" };
+    throw new Error(codeMsg[data.code] || "Xato kod: " + data.code);
+  }
+  return _parseProverkaResponse(data);
+}
+
+function _parseProverkaResponse(data) {
+  // API javobini to'g'ri parse qilish
+  // data.data.json — asosiy format
+  // data.data.ticket.document.receipt — alternativ format
+  let json = null;
+  if (data.data) {
+    if (data.data.json) {
+      json = data.data.json;
+    } else if (data.data.ticket && data.data.ticket.document && data.data.ticket.document.receipt) {
+      json = data.data.ticket.document.receipt;
+    }
+  }
+  if (!json) throw new Error("API bo'sh javob qaytardi (ma'lumot topilmadi)");
+
+  // Narxlar kopeykalarda — rublga o'tkazish
+  const r = v => {
+    if (typeof v === 'number') return v / 100;
+    if (typeof v === 'string') return parseFloat(v) || 0;
+    return 0;
+  };
+
+  // Do'kon nomi
+  const store = json.user || json.retailPlace || json.retailPlaceAddress || json.storeName || "Noma'lum do'kon";
+
+  // Sana — ticketDate yoki dateTime
+  let dateStr = new Date().toISOString();
+  if (json.dateTime) {
+    dateStr = new Date(json.dateTime).toISOString();
+  } else if (json.ticketDate) {
+    // ticketDate format: "20210217T2028" yoki unix timestamp
+    try {
+      if (typeof json.ticketDate === 'number') {
+        dateStr = new Date(json.ticketDate * 1000).toISOString();
+      } else {
+        const s = String(json.ticketDate);
+        // "20210217T2028" → parse
+        const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/);
+        if (m) dateStr = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00`).toISOString();
+      }
+    } catch(e) {}
+  }
+
+  // Mahsulotlar
+  const rawItems = json.items || json.products || [];
+  const items = rawItems.map(i => ({
+    name: i.name || i.text || '?',
+    price: r(i.price || i.sum || 0),
+    qty: i.quantity || i.qty || 1
+  }));
+
+  // Fiskal identifikatorlar — dublikat aniqlash uchun
+  const fn = String(json.fiscalDriveNumber || json.fn || data.request?.manual?.fn || '');
+  const fd = String(json.fiscalDocumentNumber || json.fd || json.requestNumber || data.request?.manual?.fd || '');
+  const fp = String(json.fiscalSign || json.fp || data.request?.manual?.fp || '');
+
+  return {
+    store,
+    total: r(json.totalSum || json.total || 0),
+    date: dateStr,
+    items,
+    fn, fd, fp,  // ← dublikat aniqlash uchun
+    _source: 'proverka'
+  };
+}
+
+// qrraw usuli — kamera QR string uchun
+async function fetchFromProverkaRaw(qrString) {
+  const fd = new FormData();
+  fd.append('token', _PROVERKA_TOKEN);
+  fd.append('qrraw', qrString);
+  let res;
+  try {
+    res = await fetch('https://proverkacheka.com/api/v1/check/get', { method: 'POST', body: fd });
+  } catch(e) {
+    throw new Error("Internet yo'q yoki server bilan aloqa uzildi");
+  }
+  if (!res.ok) throw new Error('Server xatosi: ' + res.status);
+  const data = await res.json();
+  if (data.code === 2) {
+    await new Promise(r => setTimeout(r, 2500));
+    const fd2 = new FormData();
+    fd2.append('token', _PROVERKA_TOKEN);
+    fd2.append('qrraw', qrString);
+    const res2 = await fetch('https://proverkacheka.com/api/v1/check/get', { method: 'POST', body: fd2 });
+    const data2 = await res2.json();
+    if (data2.code !== 1) throw new Error("Chek ma'lumotlari tayyor emas (kod: " + data2.code + ')');
+    return _parseProverkaResponse(data2);
+  }
+  if (data.code !== 1) {
+    const codeMsg = { 0: "Chek noto'g'ri yoki topilmadi", 3: "So'rovlar limiti oshdi", 5: "Ma'lumot olinmadi" };
+    throw new Error(codeMsg[data.code] || "Xato kod: " + data.code);
+  }
+  return _parseProverkaResponse(data);
+}
+
+// ============================================================
+// RECEIPT ANIMATION
+
+// ============================================================
+function showReceiptAnimation(storeName, amount) {
+  const overlay = document.getElementById('receiptAnimOverlay');
+  const msgEl = document.getElementById('receiptAnimMsg');
+  const subEl = document.getElementById('receiptAnimSub');
+  const paper = document.getElementById('receiptPaper');
+  const check = document.getElementById('receiptCheckmark');
+
+  // Reset animation
+  paper.style.animation = 'none';
+  check.style.animation = 'none';
+  msgEl.style.animation = 'none';
+  subEl.style.animation = 'none';
+  void paper.offsetWidth; // reflow
+
+  paper.style.animation = '';
+  check.style.animation = '';
+  msgEl.style.animation = '';
+  subEl.style.animation = '';
+
+  msgEl.textContent = storeName ? storeName : "Chek qo'shildi!";
+  subEl.textContent = amount ? fmtN(amount) + ' ₽ cheklar ro\'yxatiga qo\'shildi ✅' : "Cheklar ro'yxatiga qo'shildi ✅";
+
+  overlay.classList.add('show');
+  setTimeout(() => { overlay.classList.remove('show'); }, 3000);
+}
+
+// ============================================================
+// SCAN PROGRESS HELPERS
+// ============================================================
+let _scanCancelled = false;
+
+function openScanProgress() {
+  _scanCancelled = false;
+  for (let i = 1; i <= 2; i++) {
+    setStep(i, 'wait', null, 'Kutilmoqda...');
+  }
+  document.getElementById('spCancelBtn').style.display = '';
+  document.getElementById('spCancelBtn').textContent = 'Bekor qilish';
+  document.getElementById('scanProgressOverlay').classList.add('open');
+}
+
+function closeScanProgress() {
+  document.getElementById('scanProgressOverlay').classList.remove('open');
+}
+
+function cancelScanProgress() {
+  _scanCancelled = true;
+  stopCamera();
+  closeScanProgress();
+}
+
+function setStep(num, state, icon, text) {
+  const iconEl = document.getElementById('spIcon' + num);
+  const txtEl  = document.getElementById('spTxt' + num);
+  if (!iconEl || !txtEl) return;
+  // state: 'wait' | 'spin' | 'done' | 'err'
+  iconEl.className = 'sp-icon ' + state;
+  if (icon) iconEl.textContent = icon;
+  txtEl.textContent = text;
+}
+
+function handleScanFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  openScanProgress();
+  _processScanFile(file).catch(err => {
+    if (_scanCancelled) return;
+    const msg = (err && err.message) ? err.message : "Noma'lum xato";
+    setStep(2, 'err', '❌', msg.slice(0, 70));
+    document.getElementById('spCancelBtn').textContent = 'Yopish';
+    setTimeout(() => {
+      if (!_scanCancelled) {
+        closeScanProgress();
+        openManualCheck();
+      }
+    }, 2500);
+  });
+}
+
+async function _processScanFile(file) {
+  if (_scanCancelled) return;
+
+  // Qadam 1: Rasm API ga yuborilmoqda
+  setStep(1, 'spin', '⏳', "Rasm proverkacheka.com ga yuborilmoqda...");
+
+  if (_scanCancelled) return;
+
+  // Qadam 2: API javob kutilmoqda
+  setStep(2, 'spin', '⏳', "QR skanerlanmoqda va chek olinmoqda...");
+
+  let result;
+  try {
+    result = await fetchFromProverkaFile(file);
+  } catch(err) {
+    setStep(1, 'done', '✅', 'Rasm yuborildi');
+    setStep(2, 'err', '❌', (err.message || "Server xatosi").slice(0, 70));
+    document.getElementById('spCancelBtn').textContent = 'Yopish';
+    await new Promise(r => setTimeout(r, 2500));
+    if (!_scanCancelled) { closeScanProgress(); openManualCheck(); }
+    return;
+  }
+
+  if (_scanCancelled) return;
+
+  setStep(1, 'done', '✅', 'Rasm muvaffaqiyatli yuborildi');
+  setStep(2, 'done', '✅', result.store + ' — ' + fmtN(result.total) + ' ₽');
+
+  await new Promise(r => setTimeout(r, 600));
+  if (_scanCancelled) return;
+
+  closeScanProgress();
+  pendingScan = result;
+  openScanModal(result, 'proverka');
+}
+
+function openScanModal(data, source) {
+  document.getElementById('scanModalTitle').textContent = '🧾 ' + (data.store||'Chek topildi');
+  const badgeEl = document.getElementById('scanMethodBadge');
+  if (badgeEl) {
+    const src = source || data._source || 'ai';
+    if (src === 'proverka') {
+      badgeEl.innerHTML = '<div class="scan-method-badge qr">✅ proverkacheka.com — To\'liq ma\'lumot</div>';
+    } else {
+      badgeEl.innerHTML = '<div class="scan-method-badge qr">📷 QR kod o\'qildi</div>';
+    }
+  }
+
+  const EXCL_KEYWORDS = {
+    aroq:    ['водка','спирт','алкоголь','whiskey','коньяк','виски','бренди','ром','текила','джин','абсент'],
+    sigaret: ['сигарет','табак','папирос','сигара','кальян','никотин'],
+    piva:    ['пиво','beer','балтика','хейнекен','corona','бочковое','разливное'],
+    vino:    ['вино','wine','шампанское','игристое','портвейн','мартини'],
+    qahva:   ['кофе','coffee','капучино','латте','эспрессо','американо','мокко'],
+  };
+
+  const excls = getExclusions();
+  const members = getMembers();
+
+  // Har bir mahsulot uchun: kim taqiqlagan?
+  // excludedByItem = { itemIndex: [memberName, ...] }
+  const items = data.items || [];
+  const itemExcludedBy = items.map(item => {
+    const excluders = [];
+    members.forEach(m => {
+      const myExcls = excls[m.id] || [];
+      for (const key of myExcls) {
+        const kws = EXCL_KEYWORDS[key] || [];
+        if (kws.some(kw => item.name.toLowerCase().includes(kw.toLowerCase()))) {
+          excluders.push(m.name);
+          break;
+        }
+      }
+    });
+    return excluders;
+  });
+
+  // Hech kim taqiqlamagan mahsulotlar = barchaga taalluqli
+  // Kimdir taqiqlagan = o'sha odamlar hisobidan chiqariladi
+  // Lekin umumiy summadan ham chiqariladi (taqiqlagan odamlar soni bo'yicha)
+
+  // Jami summa — faqat hech kim taqiqlamagan mahsulotlar + taqiqlangan mahsulotlarning
+  // taqiqlamagan odamlarga to'g'ri keladigan qismi
+  const n = members.length || 1;
+
+  // Har bir mahsulotning "umumiy hisob uchun" qiymati:
+  // Agar X kishi taqiqlagan bo'lsa → faqat (n-X)/n qismi hisobga kiradi
+  let adjustedTotal = 0;
+  items.forEach((item, idx) => {
+    const excluderCount = itemExcludedBy[idx].length;
+    const itemTotal = item.price * (item.qty || 1);
+    const fraction = Math.max(0, (n - excluderCount) / n);
+    adjustedTotal += itemTotal * fraction;
+  });
+  adjustedTotal = Math.round(adjustedTotal);
+
+  // Taqiqlangan mahsulotlar ro'yxati (hech bo'lmasa 1 kishi taqiqlagan)
+  const hasExcluded = itemExcludedBy.some(ex => ex.length > 0);
+
+  // Render items
+  const includedItems  = items.filter((_, i) => itemExcludedBy[i].length === 0);
+  const excludedItems  = items.filter((_, i) => itemExcludedBy[i].length > 0);
+
+  document.getElementById('scanItems').innerHTML =
+    includedItems.map((item, localIdx) => {
+      const realIdx = items.indexOf(item);
+      return `<div class="rcpt-item-wrap" id="scanitem-${realIdx}">
+        <div class="rcpt-delete-reveal" onclick="removeScanItem(${realIdx})">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </div>
+        <div class="rcpt-item-inner">
+          <span class="name">${item.name}${(item.qty||1)>1?' ×'+item.qty:''}</span>
+          <span class="price">${fmtN(item.price*(item.qty||1))} ₽</span>
+        </div>
+      </div>`;
+    }).join('') +
+    (excludedItems.length > 0 ? `
+      <div style="margin:10px 0 4px;padding:8px 12px;background:rgba(201,48,48,0.06);border-radius:10px;border:1px solid rgba(201,48,48,0.12);">
+        <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px;">🚫 Taqiqlangan mahsulotlar</div>
+        ${excludedItems.map(item => {
+          const excluders = itemExcludedBy[items.indexOf(item)];
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(201,48,48,0.08);">
+            <div>
+              <span style="font-size:13px;color:var(--red);text-decoration:line-through;">${item.name}</span>
+              <div style="font-size:11px;color:var(--sub);margin-top:1px;">${excluders.join(', ')} uchun hisobdan chiqarildi</div>
+            </div>
+            <span style="font-size:12px;font-family:var(--mono);color:var(--red);opacity:.6;">${fmtN(item.price*(item.qty||1))} ₽</span>
+          </div>`;
+        }).join('')}
+      </div>` : '');
+
+  document.getElementById('scanTotal').textContent = fmtN(adjustedTotal) + ' ₽';
+  document.getElementById('scanMeta').textContent = '📅 ' + (data.date||fmtDate(new Date().toISOString())) + ' · ' + (data.store||'');
+
+  if (hasExcluded) {
+    const exEl = document.getElementById('scanExcluded');
+    exEl.style.display = 'block';
+    // Kim nima taqiqlagan — qisqa xabar
+    const names = [...new Set(itemExcludedBy.flat())];
+    exEl.textContent = `🚫 ${names.join(', ')} lar uchun taqiqlangan mahsulotlar hisobdan chiqarildi`;
+  } else {
+    document.getElementById('scanExcluded').style.display = 'none';
+  }
+
+  // pendingScan ga saqlash — confirmScan uchun
+  pendingScan._adjustedTotal = adjustedTotal;
+  pendingScan._itemExcludedBy = itemExcludedBy;
+  pendingScan._excludedItems = excludedItems;
+  pendingScan._includedItems = includedItems;
+
+  document.getElementById('scanModal').classList.add('open');
+  setTimeout(() => initSwipeDelete(), 50);
+}
+
+// ============================================================
+// TAQIQLANGAN MAHSULOTLAR BILDIRISHI
+// ============================================================
+function showExclNotice(names, itemNames, store) {
+  const el = document.getElementById('exclNoticeOverlay');
+  if (!el) return;
+  document.getElementById('exclNoticeNames').textContent = names.join(' va ') + ' lar';
+  document.getElementById('exclNoticeItems').textContent = itemNames;
+  document.getElementById('exclNoticeStore').textContent = store;
+  el.classList.add('open');
+}
+function closeExclNotice() {
+  document.getElementById('exclNoticeOverlay').classList.remove('open');
+}
+function initSwipeDelete() {
+  document.querySelectorAll('.rcpt-item-wrap:not(.excluded)').forEach(wrap => {
+    const inner = wrap.querySelector('.rcpt-item-inner');
+    if (!inner || wrap._swipeInit) return;
+    wrap._swipeInit = true;
+    let startX = 0, startY = 0, isDragging = false, currentX = 0;
+    
+    inner.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isDragging = false;
+      currentX = wrap.classList.contains('swiped') ? -80 : 0;
+    }, { passive: true });
+    
+    inner.addEventListener('touchmove', e => {
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!isDragging && Math.abs(dy) > Math.abs(dx)) return;
+      isDragging = true;
+      const newX = Math.max(-80, Math.min(0, currentX + dx));
+      inner.style.transition = 'none';
+      inner.style.transform = `translateX(${newX}px)`;
+      wrap.querySelector('.rcpt-delete-reveal').style.opacity = Math.abs(newX) / 80;
+    }, { passive: true });
+    
+    inner.addEventListener('touchend', e => {
+      if (!isDragging) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      inner.style.transition = '';
+      inner.style.transform = '';
+      wrap.querySelector('.rcpt-delete-reveal').style.opacity = '';
+      if (currentX + dx < -40) {
+        wrap.classList.add('swiped');
+      } else {
+        wrap.classList.remove('swiped');
+      }
+    });
+    
+    // Click outside swiped item — close
+    document.addEventListener('touchstart', ev => {
+      if (!wrap.classList.contains('swiped')) return;
+      if (!wrap.contains(ev.target)) wrap.classList.remove('swiped');
+    }, { passive: true });
+  });
+}
+
+// Scan modaldan mahsulotni o'chirish
+function removeScanItem(idx) {
+  if (!pendingScan || !pendingScan.items) return;
+  const item = pendingScan.items[idx];
+  if (!item) return;
+  pendingScan.items.splice(idx, 1);
+  // Adjust total
+  const removed = item.price * (item.qty || 1);
+  pendingScan._adjustedTotal = Math.max(0, (pendingScan._adjustedTotal || pendingScan.total || 0) - removed);
+  // Re-render modal
+  openScanModal(pendingScan, pendingScan._source || 'proverka');
+}
+
+function isDuplicateCheck(store, amount, dateIso, fn, fd, fp) {
+  const checks = getChecks();
+  // Agar fiskal raqamlar mavjud bo'lsa — ular bo'yicha aniq tekshir (eng ishonchli)
+  if (fn && fd && fp) {
+    const found = checks.some(c => c.fn && c.fd && c.fp &&
+      c.fn === fn && c.fd === fd && c.fp === fp);
+    if (found) return true;
+  }
+  // Fiskal raqam yo'q bo'lsa — do'kon + summa + kun bo'yicha taxminiy tekshir
+  const newDate = new Date(dateIso || new Date());
+  return checks.some(c => {
+    const existDate = new Date(c.date);
+    const sameStore = (c.store||'').toLowerCase().trim() === (store||'').toLowerCase().trim();
+    const sameAmt = Math.abs(c.amount - amount) < 1;
+    const sameDay = existDate.toDateString() === newDate.toDateString();
+    return sameStore && sameAmt && sameDay;
+  });
+}
+
+function confirmScan() {
+  if (!pendingScan || !currentUser) return;
+  const store = pendingScan.store||"Noma'lum do'kon";
+  const amount = pendingScan._adjustedTotal || pendingScan.total || 0;
+  const dateStr = pendingScan.date || new Date().toISOString();
+  const fn = pendingScan.fn || '';
+  const fd = pendingScan.fd || '';
+  const fp = pendingScan.fp || '';
+
+  if (isDuplicateCheck(store, amount, dateStr, fn, fd, fp)) {
+    showToast('Dublikat chek ⚠️', 'Bu chek allaqachon qo\'shilgan!', 'err');
+    closeModal('scanModal');
+    pendingScan = null;
+    return;
+  }
+
+  const checks = getChecks();
+  const newCheck = {
+    id: Date.now().toString(),
+    store,
+    amount,
+    scannedBy: currentUser.id,
+    date: new Date().toISOString(),
+    items: pendingScan.items||[],
+    fn, fd, fp,  // fiskal identifikatorlar
+  };
+  checks.push(newCheck);
+  saveChecks(checks);
+  closeModal('scanModal');
+
+  // Taqiqlangan mahsulotlar haqida xabar
+  const excludedItems = pendingScan._excludedItems || [];
+  const itemExcludedBy = pendingScan._itemExcludedBy || [];
+  const allItems = pendingScan.items || [];
+
+  pendingScan = null;
+  renderScanHistory(); renderHome();
+  const notifMsg = `${currentUser.name} yangi chek qo'shdi: ${newCheck.store} — ${fmtN(newCheck.amount)} ₽`;
+  showReceiptAnimation(newCheck.store, newCheck.amount);
+
+  // Taqiqlangan mahsulotlar bo'lsa — alohida xabar
+  if (excludedItems.length > 0) {
+    const names = [...new Set(itemExcludedBy.flat())];
+    const itemNames = excludedItems.map(i => i.name).join(', ');
+    setTimeout(() => {
+      showExclNotice(names, itemNames, newCheck.store);
+    }, 3200); // Receipt animatsiyadan keyin
+  }
+
+  showToast('Chek saqlandi', notifMsg, 'home');
+  sendPushNotif('🧾 Yangi chek qo\'shildi', notifMsg);
+}
+
+function renderScanHistory() {
+  const checks = getChecks().slice(-5).reverse();
+  const members = getMembers();
+  const el = document.getElementById('scanHistory');
+  if (checks.length===0) {
+    el.innerHTML = `<div class="empty-state"><div class="ico"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><p>Hali skaner qilingan chek yo'q</p></div>`;
+    return;
+  }
+  el.innerHTML = checks.map(c=>{
+    const m = members.find(x=>x.id===c.scannedBy)||{name:'?',avClass:'av0'};
+    return `<button class="check-card" onclick="openCheckDetail('${c.id}')">
+      <div class="av ${m.avClass}">${m.name[0]}</div>
+      <div class="ck-info"><strong>${m.name}</strong><em>${c.store} · ${fmtDate(c.date)}</em></div>
+      <div class="ck-right"><div class="ck-amt">${fmtN(c.amount)} ₽</div><div class="ck-tag">✅</div></div>
+    </button>`;
+  }).join('');
+}
+
+// ============================================================
+// CHECK DETAIL MODAL
+// ============================================================
+function openCheckDetail(checkId) {
+  const checks = getChecks();
+  const members = getMembers();
+  const c = checks.find(x => x.id === checkId);
+  if (!c) return;
+  const m = members.find(x => x.id === c.scannedBy) || { name: '?', avClass: 'av0' };
+
+  document.getElementById('cdStore').textContent = c.store || "Noma'lum do'kon";
+  document.getElementById('cdAmt').textContent = fmtN(c.amount) + ' ₽';
+  document.getElementById('cdMeta').innerHTML = '📅 ' + fmtDate(c.date) +
+    (c.fn ? `<br><span style="font-size:11px;color:var(--sub);font-family:var(--mono);">ФН: ${c.fn} · ФД: ${c.fd} · ФП: ${c.fp}</span>` : '');
+
+  document.getElementById('cdWho').innerHTML = `
+    <div class="av ${m.avClass}">${m.name[0]}</div>
+    <div style="flex:1;">
+      <strong style="display:block;font-size:14px;">${m.name}</strong>
+      <em style="font-size:12px;color:var(--sub);font-style:normal;">Skaner qilgan</em>
+    </div>
+    <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);">${fmtN(c.amount)} ₽</div>
+  `;
+
+  const items = c.items || [];
+  if (items.length === 0) {
+    document.getElementById('cdItems').innerHTML =
+      '<div class="chk-item-row"><span class="chk-item-name" style="color:var(--sub);">Mahsulotlar ro\'yxati yo\'q</span></div>';
+  } else {
+    document.getElementById('cdItems').innerHTML = items.map(i => `
+      <div class="chk-item-row">
+        <span class="chk-item-name">${i.name}${(i.qty||1)>1?' ×'+i.qty:''}</span>
+        <span class="chk-item-price">${fmtN(i.price*(i.qty||1))} ₽</span>
+      </div>`).join('');
+  }
+
+  document.getElementById('cdDeleteBtn').onclick = function() { deleteCheck(checkId); };
+  document.getElementById('checkDetailModal').classList.add('open');
+}
+
+// ============================================================
+// CHEK O'CHIRISH — OVOZ BERISH TIZIMI
+// 4 kishi 60 soniya ichida tasdiqlasa o'chiriladi
+// ============================================================
+const DELETE_VOTES_REQUIRED = 4;
+const DELETE_TIMEOUT_MS = 60000; // 60 soniya
+
+function getDeleteRequests() {
+  return DB.get('deleteRequests', []);
+}
+function saveDeleteRequests(arr) {
+  DB.set('deleteRequests', arr);
+}
+
+// Eski so'rovlarni tozalash (60 soniyadan o'tgan)
+function cleanExpiredDeleteRequests() {
+  const now = Date.now();
+  const reqs = getDeleteRequests().filter(r => (now - r.createdAt) < DELETE_TIMEOUT_MS);
+  saveDeleteRequests(reqs);
+  return reqs;
+}
+
+// Chek o'chirish so'rovi yaratish yoki tasdiqlash
+function deleteCheck(checkId) {
+  if (!currentUser) return;
+  const checks = getChecks();
+  const c = checks.find(x => x.id === checkId);
+  if (!c) { showToast('Xato', 'Chek topilmadi', 'err'); return; }
+
+  let reqs = cleanExpiredDeleteRequests();
+  let req = reqs.find(r => r.checkId === checkId);
+
+  if (!req) {
+    // Yangi so'rov yaratish
+    req = {
+      id: Date.now().toString(),
+      checkId,
+      checkStore: c.store,
+      checkAmount: c.amount,
+      requestedBy: currentUser.id,
+      requestedByName: currentUser.name,
+      createdAt: Date.now(),
+      votes: [currentUser.id]
+    };
+    reqs.push(req);
+    saveDeleteRequests(reqs);
+    closeModal('checkDetailModal');
+    showDeleteVoteModal(req, true);
+    sendPushNotif('🗑️ Chek o\'chirilmoqchi', `${currentUser.name} "${c.store}" chekini o\'chirmoqchi (${fmtN(c.amount)} ₽). Tasdiqlang!`);
+  } else {
+    // Mavjud so'rovga ovoz berish
+    if (req.votes.includes(currentUser.id)) {
+      showToast('Allaqachon ovoz berdingiz', `Siz allaqachon tasdiqladingiz. ${req.votes.length}/${DELETE_VOTES_REQUIRED} ovoz`, 'bell');
+      return;
+    }
+    req.votes.push(currentUser.id);
+    const idx = reqs.findIndex(r => r.checkId === checkId);
+    reqs[idx] = req;
+    saveDeleteRequests(reqs);
+
+    if (req.votes.length >= DELETE_VOTES_REQUIRED) {
+      // O'chirish!
+      _executeDeleteCheck(checkId, req);
+    } else {
+      closeModal('checkDetailModal');
+      showDeleteVoteModal(req, false);
+    }
+  }
+}
+
+function _executeDeleteCheck(checkId, req) {
+  const checks = getChecks();
+  const c = checks.find(x => x.id === checkId);
+  const memberId = c ? c.scannedBy : null;
+  saveChecks(checks.filter(x => x.id !== checkId));
+  // So'rovni o'chirish
+  saveDeleteRequests(getDeleteRequests().filter(r => r.checkId !== checkId));
+  closeModal('checkDetailModal');
+  closeDeleteVoteModal();
+  renderHome(); renderChecks(); renderScanHistory(); renderBalans();
+  if (memberId && document.getElementById('s-detail') && document.getElementById('s-detail').classList.contains('active')) {
+    openPersonDetail(memberId);
+  }
+  showToast("✅ Chek o'chirildi", `4 kishi tasdiqladi — "${req.checkStore}" o'chirildi`, 'home');
+  sendPushNotif('🗑️ Chek o\'chirildi', `"${req.checkStore}" cheki barcha tomonidan tasdiqlangan holda o\'chirildi`);
+}
+
+// O'chirish ovoz berish modalini ko'rsatish
+function showDeleteVoteModal(req, isNew) {
+  const members = getMembers();
+  const totalMembers = members.length;
+  const votedCount = req.votes.length;
+  const remaining = DELETE_VOTES_REQUIRED - votedCount;
+  const secondsLeft = Math.max(0, Math.round((DELETE_TIMEOUT_MS - (Date.now() - req.createdAt)) / 1000));
+  const alreadyVoted = req.votes.includes(currentUser ? currentUser.id : '');
+
+  const votedNames = req.votes.map(vid => {
+    const m = members.find(x => x.id === vid);
+    return m ? m.name : vid;
+  });
+
+  const modal = document.getElementById('deleteVoteModal');
+  if (!modal) return;
+
+  document.getElementById('dvCheckStore').textContent = req.checkStore || "Noma'lum do'kon";
+  document.getElementById('dvCheckAmt').textContent = fmtN(req.checkAmount) + ' ₽';
+  document.getElementById('dvRequestedBy').textContent = req.requestedByName + ' so\'radi';
+  document.getElementById('dvVoteCount').textContent = `${votedCount} / ${DELETE_VOTES_REQUIRED}`;
+  document.getElementById('dvRemaining').textContent = remaining > 0 ? `Yana ${remaining} kishi kerak` : 'Yetarli ovoz!';
+  document.getElementById('dvTimer').textContent = `⏱ ${secondsLeft} soniya qoldi`;
+  document.getElementById('dvVoters').textContent = votedNames.length > 0 ? '✅ ' + votedNames.join(', ') : '—';
+
+  // Progress bar
+  const pct = Math.min(100, (votedCount / DELETE_VOTES_REQUIRED) * 100);
+  document.getElementById('dvProgressFill').style.width = pct + '%';
+
+  const confirmBtn = document.getElementById('dvConfirmBtn');
+  if (alreadyVoted) {
+    confirmBtn.textContent = '✅ Siz tasdiqlading';
+    confirmBtn.disabled = true;
+    confirmBtn.style.opacity = '0.5';
+  } else {
+    confirmBtn.textContent = '🗑️ Tasdiqlash';
+    confirmBtn.disabled = false;
+    confirmBtn.style.opacity = '1';
+    confirmBtn.onclick = () => deleteCheck(req.checkId);
+  }
+
+  modal.classList.add('open');
+  _startDeleteVoteTimer(req);
+}
+
+let _deleteVoteTimerInterval = null;
+function _startDeleteVoteTimer(req) {
+  if (_deleteVoteTimerInterval) clearInterval(_deleteVoteTimerInterval);
+  _deleteVoteTimerInterval = setInterval(() => {
+    const secondsLeft = Math.max(0, Math.round((DELETE_TIMEOUT_MS - (Date.now() - req.createdAt)) / 1000));
+    const timerEl = document.getElementById('dvTimer');
+    if (timerEl) timerEl.textContent = `⏱ ${secondsLeft} soniya qoldi`;
+    if (secondsLeft <= 0) {
+      clearInterval(_deleteVoteTimerInterval);
+      closeDeleteVoteModal();
+      cleanExpiredDeleteRequests();
+      showToast('Vaqt tugadi', 'Chek o\'chirish so\'rovi bekor bo\'ldi ⏱', 'err');
+    }
+  }, 1000);
+}
+
+function closeDeleteVoteModal() {
+  if (_deleteVoteTimerInterval) clearInterval(_deleteVoteTimerInterval);
+  const modal = document.getElementById('deleteVoteModal');
+  if (modal) modal.classList.remove('open');
+}
+
+// Polling — boshqa foydalanuvchilar so'rovni ko'rish uchun
+let _deletePollingInterval = null;
+function startDeletePolling() {
+  if (_deletePollingInterval) clearInterval(_deletePollingInterval);
+  _deletePollingInterval = setInterval(async () => {
+    if (!CLOUD._configured() || !currentUser) return;
+    const data = await CLOUD.load();
+    if (!data || !data.deleteRequests) return;
+    const now = Date.now();
+    const activeReqs = data.deleteRequests.filter(r => (now - r.createdAt) < DELETE_TIMEOUT_MS);
+
+    // Local DB yangilash
+    DB.set('deleteRequests', activeReqs);
+
+    // Modal ochiq bo'lsa yangilaymiz
+    const modal = document.getElementById('deleteVoteModal');
+    if (modal && modal.classList.contains('open')) {
+      const dvStore = document.getElementById('dvCheckStore');
+      if (dvStore) {
+        const currentStore = dvStore.textContent;
+        const req = activeReqs.find(r => r.checkStore === currentStore || r.checkId === _currentVoteCheckId);
+        if (req) {
+          // O'chirishga yetsa — darhol o'chirish
+          if (req.votes.length >= DELETE_VOTES_REQUIRED) {
+            _executeDeleteCheck(req.checkId, req);
+            return;
+          }
+          showDeleteVoteModal(req, false);
+        } else {
+          // So'rov yo'q — vaqt tugadi yoki allaqachon o'chirilgan
+          closeDeleteVoteModal();
+        }
+      }
+    } else {
+      // Modal yopiq — yangi so'rov bormi?
+      for (const req of activeReqs) {
+        if (!req.votes.includes(currentUser.id)) {
+          // Bu foydalanuvchi hali ovoz bermagan — bildirishnoma
+          _notifyPendingDelete(req);
+          break;
+        }
+        // O'chirishga yetsa
+        if (req.votes.length >= DELETE_VOTES_REQUIRED) {
+          _executeDeleteCheck(req.checkId, req);
+        }
+      }
+    }
+  }, 8000); // 8 soniyada bir tekshir
+}
+
+let _notifiedDeleteIds = new Set();
+let _currentVoteCheckId = null;
+
+function _notifyPendingDelete(req) {
+  if (_notifiedDeleteIds.has(req.id)) return;
+  _notifiedDeleteIds.add(req.id);
+  _currentVoteCheckId = req.checkId;
+  const secondsLeft = Math.max(0, Math.round((DELETE_TIMEOUT_MS - (Date.now() - req.createdAt)) / 1000));
+  showDeleteRequestBanner(req, secondsLeft);
+}
+
+function showDeleteRequestBanner(req, secondsLeft) {
+  const banner = document.getElementById('deleteRequestBanner');
+  if (!banner) return;
+  document.getElementById('drbStore').textContent = req.checkStore;
+  document.getElementById('drbAmt').textContent = fmtN(req.checkAmount) + ' ₽';
+  document.getElementById('drbRequester').textContent = req.requestedByName;
+  document.getElementById('drbTimer').textContent = secondsLeft + 's';
+  banner.style.display = 'flex';
+  banner.onclick = () => {
+    banner.style.display = 'none';
+    _currentVoteCheckId = req.checkId;
+    showDeleteVoteModal(req, false);
+  };
+  setTimeout(() => { if (banner) banner.style.display = 'none'; }, Math.min(secondsLeft * 1000, 20000));
+}
+
+// ============================================================
+// MANUAL CHECK
+// ============================================================
+function openManualCheck() {
+  closeModal('scanModal');
+  const members = getMembers();
+  const sel = document.getElementById('acScanner');
+  sel.innerHTML = members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  if (currentUser) sel.value = currentUser.id;
+  document.getElementById('acStore').value='';
+  document.getElementById('acAmount').value='';
+  const exEl = document.getElementById('acExcl');
+  exEl.innerHTML = EXCL_PRODUCTS.map(p=>`
+    <div class="excl-chip" id="excl-${p.key}" onclick="toggleExclChip('${p.key}')">${p.label}</div>
+  `).join('');
+  document.getElementById('addCheckModal').classList.add('open');
+}
+function toggleExclChip(key) { document.getElementById('excl-'+key).classList.toggle('on'); }
+function openAddCheck() { openManualCheck(); }
+function saveManualCheck() {
+  const store = document.getElementById('acStore').value.trim()||"Noma'lum do'kon";
+  const amount = parseFloat(document.getElementById('acAmount').value)||0;
+  const scanner = document.getElementById('acScanner').value;
+  if (amount<=0) { showToast('Xato','Summani kiriting','err'); return; }
+  if (isDuplicateCheck(store, amount, new Date().toISOString())) {
+    showToast('Dublikat chek', store + ' — ' + fmtN(amount) + ' ₽ bugun allaqachon qo\'shilgan ⚠️', 'err');
+    return;
+  }
+  const checks = getChecks();
+  const newCheck = { id: Date.now().toString(), store, amount, scannedBy: scanner, date: new Date().toISOString(), items:[] };
+  checks.push(newCheck);
+  saveChecks(checks);
+  closeModal('addCheckModal');
+  renderHome(); renderChecks(); renderScanHistory();
+  const members = getMembers();
+  const m = members.find(x=>x.id===scanner);
+  const notifMsg = `${m?.name||'?'} chek qo'shdi: ${store} — ${fmtN(amount)} ₽`;
+  showReceiptAnimation(store, amount);
+  showToast("Chek qo'shildi", notifMsg, 'home');
+  sendPushNotif("🧾 Yangi chek qo'shildi", notifMsg);
+}
+
+// ============================================================
+// XODIM
+// ============================================================
+function renderXodim() {
+  if (!currentUser) return;
+  const checks = getChecks();
+  const members = getMembers();
+  const bals = calcBalances();
+  const myB = bals[currentUser.id]||0;
+  const total = checks.reduce((s,c)=>s+c.amount,0);
+  const today = checks.filter(c=>{ const d=new Date(c.date),now=new Date(); return d.toDateString()===now.toDateString()&&c.scannedBy===currentUser.id; }).reduce((s,c)=>s+c.amount,0);
+  document.getElementById('xodName').textContent = currentUser.name + ' ' + (currentUser.emoji||'');
+  document.getElementById('xodStats').innerHTML = `
+    <div class="xod-stat"><div class="v">${fmtN(Math.round(total))} ₽</div><div class="l">Jami harajat</div></div>
+    <div class="xod-stat"><div class="v">${members.length} nafar</div><div class="l">A'zolar</div></div>
+    <div class="xod-stat"><div class="v">${fmtN(Math.round(today))} ₽</div><div class="l">Bugungi harajat</div></div>
+    <div class="xod-stat"><div class="v" style="color:${myB>=0?'var(--green)':'var(--red)'}">${fmt(myB)}</div><div class="l">Sizning balans</div></div>`;
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats() {
+  const checks = getChecks();
+  const members = getMembers();
+  const days = ['Du','Se','Ch','Pa','Ju','Sh','Ya'];
+  const dayTotals = [0,0,0,0,0,0,0];
+  const now = new Date();
+  checks.forEach(c=>{ const d=new Date(c.date); const diff=Math.floor((now-d)/86400000); if(diff<7) dayTotals[6-diff]=(dayTotals[6-diff]||0)+c.amount; });
+  const wmax = Math.max(...dayTotals,1);
+  document.getElementById('statWeekBars').innerHTML = days.map((d,i)=>`
+    <div class="bar-row">
+      <div class="bar-name">${d}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(dayTotals[i]/wmax*100).toFixed(0)}%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div></div>
+      <div class="bar-val">${fmtN(Math.round(dayTotals[i]))} ₽</div>
+    </div>`).join('');
+  const colors = ['var(--accent)','var(--red)','var(--accent2)','#4facfe','var(--orange)','var(--purple)'];
+  const pTotals = members.map(m=>({ name:m.name, val:checks.filter(c=>c.scannedBy===m.id).reduce((s,c)=>s+c.amount,0), color:colors[members.indexOf(m)%colors.length] }));
+  const pmax = Math.max(...pTotals.map(p=>p.val),1);
+  document.getElementById('statPersonBars').innerHTML = pTotals.map(p=>`
+    <div class="bar-row">
+      <div class="bar-name" style="font-size:11px;">${p.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(p.val/pmax*100).toFixed(0)}%;background:${p.color};"></div></div>
+      <div class="bar-val">${fmtN(Math.round(p.val))} ₽</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// SETTINGS — Faqat Ogabek (admin) a'zo qo'sha/o'chira oladi
+// ============================================================
+const ADMIN_ID = 'G'; // Ogabek
+
+function isAdmin() {
+  return currentUser && currentUser.id === ADMIN_ID;
+}
+
+function renderSettings() {
+  const members = getMembers();
+  const el = document.getElementById('membersList');
+  el.innerHTML = members.map(m=>`
+    <div class="bp-card" style="margin-bottom:8px;">
+      <div class="av ${m.avClass}">${m.name[0]}</div>
+      <div class="bp-info">
+        <strong>${m.name} ${m.emoji||''}</strong>
+        <em style="color:var(--sub);font-size:12px;">PIN: ••••${isAdmin() ? ' · ID: '+m.id : ''}</em>
+      </div>
+      ${isAdmin() && m.id !== ADMIN_ID ? `
+        <button onclick="removeMember('${m.id}')" style="background:rgba(201,48,48,0.08);border:1px solid rgba(201,48,48,0.15);border-radius:10px;padding:7px 14px;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);">O'chirish</button>
+      ` : `<span style="font-size:18px;">${m.id===ADMIN_ID?'👑':''}</span>`}
+    </div>`).join('');
+
+  // A'zo qo'shish formasi — faqat Ogabekga ko'rsin
+  const addForm = document.getElementById('addMemberForm');
+  if (addForm) addForm.style.display = isAdmin() ? 'block' : 'none';
+
+  // Admin emas bo'lsa — xabar ko'rsat
+  const notAdminMsg = document.getElementById('notAdminMsg');
+  if (notAdminMsg) notAdminMsg.style.display = isAdmin() ? 'none' : 'flex';
+}
+
+function addMember() {
+  if (!isAdmin()) { showToast('Ruxsat yo\'q', 'Faqat Ogabek a\'zo qo\'sha oladi 👑', 'err'); return; }
+  const name = document.getElementById('newMemberName').value.trim();
+  const pin = document.getElementById('newMemberPin').value.trim();
+  if (!name||pin.length!==4||!/^\d{4}$/.test(pin)) { showToast('Xato','Ism va 4 raqamli PIN kiriting','err'); return; }
+  const members = getMembers();
+  if (members.find(m=>m.pin===pin)) { showToast('Xato','Bu PIN allaqachon ishlatilgan','err'); return; }
+  const avClasses = ['av0','av1','av2','av3','av4','av5'];
+  members.push({ id:name[0].toUpperCase()+(Date.now()%1000), name, pin, emoji:'', avClass:avClasses[members.length%avClasses.length] });
+  saveMembers(members);
+  document.getElementById('newMemberName').value='';
+  document.getElementById('newMemberPin').value='';
+  renderSettings();
+  showToast("A'zo qo'shildi", name+" tizimga qo'shildi ✅",'home');
+}
+
+function removeMember(id) {
+  if (!isAdmin()) { showToast('Ruxsat yo\'q', 'Faqat Ogabek o\'chira oladi 👑', 'err'); return; }
+  if (id === ADMIN_ID) { showToast('Xato', "O'z hisobini o'chira olmaysiz",'err'); return; }
+  if (!confirm("Bu a'zoni o'chirmoqchimisiz?")) return;
+  saveMembers(getMembers().filter(m=>m.id!==id));
+  renderSettings();
+  showToast("O'chirildi","A'zo tizimdan o'chirildi",'home');
+}
+function clearAllData() {
+  if (!confirm("Barcha cheklar va ma'lumotlar o'chib ketadi! Davom etasizmi?")) return;
+  saveChecks([]); saveExclusions({}); saveMembers(DEFAULT_MEMBERS);
+  renderHome(); renderChecks(); renderBalans(); renderStats();
+  showToast('Tozalandi',"Barcha ma'lumotlar o'chirildi",'home');
+}
+
+// ============================================================
+// EXPORT / IMPORT (JSON DB)
+// ============================================================
+function exportData() {
+  const data = DB.exportAll();
+  data._exported = new Date().toISOString();
+  data._version = 2;
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kvartira-hisobi-db-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Ma\'lumotlar saqlandi','JSON fayl yuklab olindi ✅','home');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.checks && !data.members) { showToast('Xato','Noto\'g\'ri fayl formati','err'); return; }
+      if (!confirm(`Import qilish: ${(data.checks||[]).length} ta chek, ${(data.members||[]).length} ta a'zo. Davom etasizmi?`)) return;
+      DB.importAll(data);
+      renderHome(); renderChecks(); renderBalans(); renderStats(); renderSettings();
+      showToast('Import qilindi',"Ma'lumotlar yuklandi ✅",'home');
+    } catch(err) {
+      showToast('Xato','Faylni o\'qib bo\'lmadi','err');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ============================================================
+// PDF
+// ============================================================
+function exportPDF() {
+  const checks = getChecks();
+  const members = getMembers();
+  const bals = calcBalances();
+  const total = checks.reduce((s,c)=>s+c.amount,0);
+  const now = new Date();
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;padding:30px;color:#1a1510;background:#fffdf8;}h1{font-size:26px;margin-bottom:4px;color:#1a1510;letter-spacing:-.5px}.sub{color:#8a7e6a;font-size:13px;margin-bottom:24px;}table{width:100%;border-collapse:collapse;margin-bottom:24px;}th{background:#f5f0e8;padding:10px;text-align:left;font-size:13px;color:#8a7e6a;font-weight:700;letter-spacing:.4px;text-transform:uppercase;}td{padding:9px 10px;border-bottom:1px solid #f0ebe0;font-size:13px;}.total-row{font-weight:700;background:#f5f0e8;}h2{font-size:15px;margin:20px 0 8px;font-weight:700;color:#8a7e6a;letter-spacing:.4px;text-transform:uppercase;}.bal{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0ebe0;font-size:14px;}.pos{color:#0a8c6e;font-weight:700;}.neg{color:#c93030;font-weight:700;}</style></head><body>
+<h1>🏠 Kvartira Hisobi</h1>
+<div class="sub">Hisobot sanasi: ${now.toLocaleDateString('ru')}</div>
+<h2>Balanslar</h2>
+${members.map(m=>{const b=bals[m.id]||0;return`<div class="bal"><span>${m.name}</span><span class="${b>=0?'pos':'neg'}">${b>=0?'+':''}${fmtN(Math.round(b))} ₽</span></div>`;}).join('')}
+<h2>Barcha cheklar</h2>
+<table><tr><th>Sana</th><th>Do'kon</th><th>Kim</th><th>Summa</th></tr>
+${[...checks].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(c=>{const m=members.find(x=>x.id===c.scannedBy)||{name:'?'};return`<tr><td>${new Date(c.date).toLocaleDateString('ru')}</td><td>${c.store}</td><td>${m.name}</td><td>${fmtN(c.amount)} ₽</td></tr>`;}).join('')}
+<tr class="total-row"><td colspan="3">Jami:</td><td>${fmtN(Math.round(total))} ₽</td></tr>
+</table></body></html>`;
+  const blob = new Blob([html],{type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='kvartira-hisobi-'+now.toISOString().slice(0,10)+'.html';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('PDF Hisobot','Yuklab olindi! ✅','home');
+}
+
+// ============================================================
+// LOGOUT
+// ============================================================
+function logout() {
+  currentUser = null;
+  document.getElementById('app').style.display='none';
+  const ps = document.getElementById('pinScreen');
+  ps.style.display='flex'; ps.classList.add('active');
+  pinStr=''; renderDots();
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ============================================================
+// TOAST
+// ============================================================
+const TOAST_ICONS = {
+  home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  scan: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  err:  '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+};
+function showToast(title, body, type='home') {
+  const el = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  const ico = document.getElementById('toastIco');
+  const path = TOAST_ICONS[type] || TOAST_ICONS.home;
+  const strokeColor = type==='err'?'var(--red)':type==='scan'?'var(--accent)':'var(--accent2)';
+  ico.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">${path}</svg>`;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ============================================================
+// FORMAT
+// ============================================================
+function fmtN(n) { return Math.abs(n).toLocaleString('ru'); }
+function fmt(n) { return (n>=0?'+':'')+n.toLocaleString('ru')+' ₽'; }
+function fmtDate(iso) {
+  try {
+    const d=new Date(iso),now=new Date();
+    if(d.toDateString()===now.toDateString()) return 'Bugun, '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const yest=new Date(now); yest.setDate(yest.getDate()-1);
+    if(d.toDateString()===yest.toDateString()) return 'Kecha, '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    return d.toLocaleDateString('ru',{day:'2-digit',month:'short'})+', '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  } catch(e){ return iso; }
+}
+
+document.getElementById('pinScreen').style.display = 'flex';
+</script>
+</body>
+</html>
